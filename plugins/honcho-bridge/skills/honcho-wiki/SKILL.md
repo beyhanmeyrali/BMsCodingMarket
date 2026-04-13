@@ -1,6 +1,6 @@
 ---
 name: honcho-wiki
-description: Export Honcho memory to readable markdown and import it back. Use when you want to audit, edit, or back up what Honcho knows. Requires the official claude-honcho plugin (plastic-labs/claude-honcho) for memory collection — this skill only handles the wiki round-trip.
+description: Export Honcho memory to readable markdown and import it back. Use when you want to audit, edit, or back up what Honcho knows. Works with local Honcho API (localhost:8000) using the honcho-ai Python SDK.
 ---
 
 # Honcho Wiki Bridge
@@ -16,7 +16,7 @@ python plugins/honcho-bridge/scripts/to_wiki.py \
   --output wiki/
 ```
 
-Produces `wiki/peers/*.md` and `wiki/sessions/*.md`. Open in Obsidian to see graph view with peer ↔ session links.
+Produces `wiki/peers/*.md` and `wiki/sessions/*.md`. Open in Obsidian to see graph view with peer  session links.
 
 ## Import
 
@@ -73,6 +73,5 @@ Let's add wiki export.
 
 ## Prerequisites
 
-- Official Honcho plugin installed: `plastic-labs/claude-honcho`
 - `pip install honcho-ai pyyaml`
-- Honcho server running (cloud via [app.honcho.dev](https://app.honcho.dev), or local — see `docs/HONCHO_SETUP_GUIDE.md`)
+- Local Honcho server running at `http://localhost:8000` (see `docs/HONCHO_SETUP_GUIDE.md`)

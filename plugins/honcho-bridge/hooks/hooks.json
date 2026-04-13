@@ -1,3 +1,3 @@
 {
-  "description": "honcho-bridge: wiki export/import for Honcho. Install the official honcho plugin (plastic-labs/claude-honcho) for session memory hooks."
+  "description": "honcho-bridge: Local Honcho integration with wiki export/import for knowledge management. Works with local Honcho API at localhost:8000."
 }

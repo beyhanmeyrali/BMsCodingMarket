@@ -1,6 +1,6 @@
 ---
 name: honcho-export
-description: Export Honcho memory to Obsidian-compatible markdown wiki files (peers, sessions, transcripts).
+description: Export Honcho memory to Obsidian-compatible markdown wiki files (peers, sessions, transcripts). Works with local Honcho API at localhost:8000.
 ---
 
 # Honcho Wiki Export
@@ -11,8 +11,6 @@ python plugins/honcho-bridge/scripts/to_wiki.py \
   --workspace <your-workspace> \
   --output wiki/
 ```
-
-**Cloud (official plugin):** replace `--base-url` with your Honcho API endpoint, or omit it if `HONCHO_ENDPOINT` is set.
 
 ## Output structure
 

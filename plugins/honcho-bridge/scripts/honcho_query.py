@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+"""
+Query Honcho memory using peer.chat().
+
+Retrieves learned information about a user from previous conversations.
+"""
+
+import sys
+import argparse
+from typing import Optional
+
+try:
+    from honcho import Honcho as HonchoClient
+    HONCHO_AVAILABLE = True
+except ImportError:
+    HONCHO_AVAILABLE = False
+
+
+def query_honcho(
+    base_url: str,
+    workspace: str,
+    peer_id: str,
+    query: str,
+) -> str:
+    """Query Honcho memory for information about a peer."""
+    if not HONCHO_AVAILABLE:
+        raise ImportError("honcho-ai not installed. Run: pip install honcho-ai")
+
+    client = HonchoClient(
+        base_url=base_url,
+        api_key="placeholder",
+        workspace_id=workspace
+    )
+
+    peer = client.peer(peer_id)
+
+    response = peer.chat(query)
+
+    return response
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Query Honcho memory using peer.chat()"
+    )
+    parser.add_argument(
+        "--base-url",
+        "-b",
+        default="http://localhost:8000",
+        help="Honcho server URL (default: http://localhost:8000)",
+    )
+    parser.add_argument(
+        "--workspace",
+        "-w",
+        required=True,
+        help="Workspace ID",
+    )
+    parser.add_argument(
+        "--peer",
+        "-p",
+        required=True,
+        help="Peer ID to query about",
+    )
+    parser.add_argument(
+        "--query",
+        "-q",
+        required=True,
+        help="Question to ask about the peer",
+    )
+
+    args = parser.parse_args()
+
+    print("=" * 60)
+    print("Honcho Memory Query")
+    print("=" * 60)
+    print(f"Workspace: {args.workspace}")
+    print(f"Peer: {args.peer}")
+    print(f"Query: {args.query}")
+    print("-" * 60)
+
+    try:
+        response = query_honcho(
+            base_url=args.base_url,
+            workspace=args.workspace,
+            peer_id=args.peer,
+            query=args.query,
+        )
+
+        print(f"\n{response}")
+        print("\n" + "=" * 60)
+        print("[SUCCESS] Query complete!")
+        print("=" * 60)
+
+    except Exception as e:
+        print(f"\n[ERROR] Query failed: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

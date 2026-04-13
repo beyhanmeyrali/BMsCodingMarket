@@ -1,55 +1,56 @@
 ---
 name: honcho-install
-description: Set up Honcho memory for Claude Code — installs the official claude-honcho plugin and optionally configures a local Ollama stack if you want to run without an API key.
+description: Set up local Honcho memory with Docker + Ollama. Full offline setup with wiki export/import capabilities.
 ---
 
-# Honcho Setup for Claude Code
+# Local Honcho Setup for Claude Code
 
-## Step 1 — Install the official Honcho plugin
+## Step 1 — Install Honcho dependencies
 
-The official plugin from Plastic Labs handles session memory, context loading, and MCP tools.
-
-```
-/plugin marketplace add plastic-labs/claude-honcho
-/plugin install honcho@honcho
-```
-
-Get your API key at **[app.honcho.dev](https://app.honcho.dev)**, then set it:
-
-**macOS / Linux:**
 ```bash
-export HONCHO_API_KEY="hch-your-key-here"
-```
-
-**Windows (PowerShell):**
-```powershell
-[Environment]::SetEnvironmentVariable("HONCHO_API_KEY", "hch-your-key-here", "User")
-```
-
-Restart Claude Code. You should see Honcho context loading at session start.
-
-Full official docs: [github.com/plastic-labs/claude-honcho](https://github.com/plastic-labs/claude-honcho)
-
----
-
-## Step 2 — Install this plugin (wiki export/import)
-
-```
-/plugin marketplace add beyhanmeyrali/BMsCodingMarket
-/plugin install honcho-bridge@bms-marketplace
 pip install honcho-ai pyyaml
 ```
 
-Use `/honcho-export` and `/honcho-import` to dump/restore memory as readable markdown.
+## Step 2 — Start local Honcho server
 
----
+Follow the full setup guide in **[`docs/HONCHO_SETUP_GUIDE.md`](../../../docs/HONCHO_SETUP_GUIDE.md)**:
 
-## Running locally without an API key?
+1. Clone honcho server: `E:\workspace\honcho`
+2. Apply source patches for local Ollama
+3. Configure `.env` for localhost:8000
+4. Run `docker compose up -d --build`
 
-Set the official plugin to use your local server:
+Your Honcho API will be available at `http://localhost:8000`.
+
+## Step 3 — Verify connection
 
 ```bash
-export HONCHO_ENDPOINT="local"   # expects Honcho at http://localhost:8000
+python -c "
+import honcho as h
+client = h.Honcho(base_url='http://localhost:8000', api_key='placeholder', workspace_id='test')
+print('Connected!' if list(client.peers()) is not None else 'Failed')
+"
 ```
 
-Then follow [`docs/HONCHO_SETUP_GUIDE.md`](../../../docs/HONCHO_SETUP_GUIDE.md) to stand up the full Docker + Ollama stack locally.
+## Step 4 — Use this plugin
+
+- `/honcho-export` - Dump memory to Obsidian-compatible markdown
+- `/honcho-import` - Restore edited markdown back to Honcho
+- `honcho-wiki` skill - Full wiki round-trip workflow
+
+## Quick test
+
+```bash
+# Create a test peer and session
+python -c "
+import honcho as h
+client = h.Honcho(base_url='http://localhost:8000', api_key='placeholder', workspace_id='test-workspace')
+peer = client.peer('alice', metadata={'name': 'Alice'})
+session = client.session('test-session')
+session.add_messages([peer.message('I prefer Python and vim.')])
+print('Message stored. Wait ~1 min for deriver, then export.')
+"
+
+# Export after ~1 minute (for deriver to process)
+python plugins/honcho-bridge/scripts/to_wiki.py --workspace test-workspace --output test-wiki/
+```
