@@ -166,15 +166,30 @@ flowchart LR
 
 ## Quick Start
 
-### 1. Install the Plugin
+### One-Time Setup (Run in Claude Code)
 
-Add the marketplace to Claude Code:
+#### 1. Add the Marketplace
+
 ```
-Claude Code → Settings → Plugins → Add
-URL: https://github.com/beyhanmeyrali/BMsCodingMarket
+/plugin marketplace add beyhanmeyrali/BMsCodingMarket
 ```
 
-### 2. Install Ollama and Models
+**If authentication fails**, clone manually first:
+```bash
+git clone https://github.com/beyhanmeyrali/BMsCodingMarket.git ~/claude-marketplaces/bms
+```
+Then add the local path:
+```
+/plugin marketplace add ~/claude-marketplaces/bms
+```
+
+#### 2. Install the Plugin
+
+```
+/plugin install honcho-local@bms-marketplace
+```
+
+#### 3. Install Ollama and Models
 
 ```
 /honcho-install
@@ -184,6 +199,21 @@ This automatically:
 - Downloads `qwen3.5:9b` model (~6GB)
 - Downloads `qwen3-embedding:0.6b` model (~600MB)
 - Installs Python dependencies
+
+#### 4. Verify Installation
+
+```
+/honcho-check
+/plugin list                           # Should show honcho-local
+/plugin info honcho-local              # Shows description, version
+```
+
+### Keeping It Up to Date
+
+```
+/plugin marketplace update                              # Refresh marketplace
+/plugin update honcho-local@bms-marketplace            # Update plugin
+```
 
 ### 3. Use in Your Code
 
