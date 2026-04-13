@@ -10,6 +10,12 @@ import argparse
 import time
 from typing import Dict, Any
 
+# Fix Windows encoding issue
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 try:
     from honcho import Honcho as HonchoClient
     HONCHO_AVAILABLE = True
@@ -89,7 +95,7 @@ def format_status(status: Dict[str, Any]) -> str:
 
     if status['message_count'] > 0 and status['observation_count'] == 0:
         lines.extend([
-            "⚠️  Warning: Messages exist but 0 observations",
+            "[!] Warning: Messages exist but 0 observations",
             "   → Deriver may not have processed yet (wait ~1 min)",
             "   → Or deriver is failing — check: docker compose logs deriver",
             "",

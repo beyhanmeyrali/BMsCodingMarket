@@ -8,6 +8,12 @@ Stores conversation for future observation extraction.
 import os
 import sys
 
+# Fix Windows encoding issue
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 try:
     from honcho import Honcho as HonchoClient
     HONCHO_AVAILABLE = True

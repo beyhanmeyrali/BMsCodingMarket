@@ -8,6 +8,12 @@ DESTRUCTIVE ACTION - Deletes peers, sessions, messages, observations.
 import sys
 import argparse
 
+# Fix Windows encoding issue
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 try:
     from honcho import Honcho as HonchoClient
     HONCHO_AVAILABLE = True
@@ -143,7 +149,7 @@ def main():
             sys.exit(1)
 
     else:
-        print("⚠️  DESTRUCTIVE ACTION - Data will be permanently deleted!")
+        print("[!] DESTRUCTIVE ACTION - Data will be permanently deleted!")
         print("-" * 60)
 
         try:
