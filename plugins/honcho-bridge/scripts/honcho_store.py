@@ -7,6 +7,8 @@ Captures important information for future recall.
 
 import sys
 import argparse
+import os
+from pathlib import Path
 from typing import List
 
 # Fix Windows encoding issue
@@ -14,6 +16,22 @@ if sys.platform == "win32":
     import io
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
+
+def load_env_config():
+    """Load configuration from .env file in current directory."""
+    env_file = Path.cwd() / ".env"
+    if env_file.exists():
+        with open(env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ.setdefault(key.strip(), value.strip())
+
+
+# Load .env config at module level
+load_env_config()
 
 try:
     from honcho import Honcho as HonchoClient
@@ -65,20 +83,20 @@ def main():
     parser.add_argument(
         "--base-url",
         "-b",
-        default="http://localhost:8000",
-        help="Honcho server URL (default: http://localhost:8000)",
+        default=os.getenv("HONCHO_BASE_URL", "http://localhost:8000"),
+        help="Honcho server URL",
     )
     parser.add_argument(
         "--workspace",
         "-w",
-        required=True,
-        help="Workspace ID",
+        default=os.getenv("HONCHO_WORKSPACE", "default"),
+        help="Workspace ID (default: from .env or 'default')",
     )
     parser.add_argument(
         "--peer",
         "-p",
-        required=True,
-        help="Peer ID",
+        default=os.getenv("HONCHO_PEER_ID", "user"),
+        help="Peer ID (default: from .env or 'user')",
     )
     parser.add_argument(
         "--peer-name",
@@ -92,8 +110,8 @@ def main():
     parser.add_argument(
         "--session",
         "-s",
-        required=True,
-        help="Session ID",
+        default=os.getenv("HONCHO_SESSION", "manual"),
+        help="Session ID (default: 'manual')",
     )
     parser.add_argument(
         "--message",

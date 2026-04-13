@@ -7,6 +7,8 @@ Retrieves learned information about a user from previous conversations.
 
 import sys
 import argparse
+import os
+from pathlib import Path
 from typing import Optional
 
 # Fix Windows encoding issue
@@ -20,6 +22,21 @@ try:
     HONCHO_AVAILABLE = True
 except ImportError:
     HONCHO_AVAILABLE = False
+
+
+def load_env_config():
+    """Load configuration from .env file in current directory."""
+    env_file = Path.cwd() / ".env"
+    if env_file.exists():
+        with open(env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    os.environ.setdefault(key.strip(), value.strip())
+
+
+load_env_config()
 
 
 def query_honcho(
@@ -52,20 +69,20 @@ def main():
     parser.add_argument(
         "--base-url",
         "-b",
-        default="http://localhost:8000",
-        help="Honcho server URL (default: http://localhost:8000)",
+        default=os.getenv("HONCHO_BASE_URL", "http://localhost:8000"),
+        help="Honcho server URL",
     )
     parser.add_argument(
         "--workspace",
         "-w",
-        required=True,
-        help="Workspace ID",
+        default=os.getenv("HONCHO_WORKSPACE", "default"),
+        help="Workspace ID (default: from .env or 'default')",
     )
     parser.add_argument(
         "--peer",
         "-p",
-        required=True,
-        help="Peer ID to query about",
+        default=os.getenv("HONCHO_PEER_ID", "user"),
+        help="Peer ID (default: from .env or 'user')",
     )
     parser.add_argument(
         "--query",
