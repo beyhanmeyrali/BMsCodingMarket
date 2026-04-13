@@ -1,31 +1,45 @@
 # honcho-bridge
 
-> Wiki export/import for [Honcho](https://github.com/plastic-labs/honcho) memory. Companion to the official [claude-honcho](https://github.com/plastic-labs/claude-honcho) plugin.
+> **Fully local Honcho memory integration for Claude Code** — no API key, no cloud, just your own Docker + Ollama stack.
+
+**Why this exists:** The official [plastic-labs/claude-honcho](https://github.com/plastic-labs/claude-honcho) plugin is excellent for cloud usage, but it requires `bun` (a JavaScript runtime) and connects to the paid Honcho cloud service. For developers who want **100% local, offline memory** with their own Ollama models, the official plugin doesn't fit.
+
+`honcho-bridge` provides a Python-based alternative with skills and scripts that work directly with your local Honcho API at `localhost:8000`.
 
 ## What this is
 
-The official [plastic-labs/claude-honcho](https://github.com/plastic-labs/claude-honcho) plugin handles everything you need for persistent Claude Code memory — `SessionStart` context loading, message saving, `PreCompact` snapshots, MCP tools. **Use that first.**
+A Claude Code plugin for working with a **local Honcho memory system** running via Docker + Ollama. It provides:
 
-This plugin adds one thing the official plugin doesn't have: **wiki export/import** — the ability to dump your Honcho memory to readable, editable markdown files (Obsidian-compatible) and import them back.
+- **Skills** for querying, storing, and managing memory
+- **Wiki export/import** to readable Obsidian-compatible markdown
+- **Full offline operation** — no API keys, no internet required
 
-This is useful for:
-- Reading and auditing what Honcho actually knows about you
-- Manually correcting wrong memories
-- Bootstrapping a fresh workspace from existing docs
-- Sharing/backing up memory as plain text
+## Cloud vs Local
+
+| | Official Plugin | honcho-bridge |
+|---|---|---|
+| **Runtime** | bun (JavaScript) | Python |
+| **Backend** | app.honcho.dev (cloud) | localhost:8000 (Docker) |
+| **API Key** | Required | Not needed |
+| **Internet** | Required | Fully offline |
+| **LLM** | Cloud (paid) | Ollama (local) |
+| **Best for** | Quick setup, cloud users | Privacy, offline, local LLMs |
 
 ## Setup
 
-### 1. Install the official Honcho plugin
+### 1. Run local Honcho (Docker + Ollama)
 
+Follow the full setup guide in **[`docs/HONCHO_SETUP_GUIDE.md`](docs/HONCHO_SETUP_GUIDE.md)**:
+
+```powershell
+# Clone Honcho server
+git clone https://github.com/plastic-labs/honcho.git E:\workspace\honcho
+
+# Apply source patches for local Ollama
+# Configure .env for localhost:8000
+# Run with Docker
+docker compose up -d --build
 ```
-/plugin marketplace add plastic-labs/claude-honcho
-/plugin install honcho@honcho
-```
-
-Get your API key at [app.honcho.dev](https://app.honcho.dev). Follow the [official setup instructions](https://github.com/plastic-labs/claude-honcho).
-
-**Running locally (no API key)?** See [`docs/HONCHO_SETUP_GUIDE.md`](docs/HONCHO_SETUP_GUIDE.md) for the full local Ollama + Docker stack setup.
 
 ### 2. Install this plugin
 
@@ -40,56 +54,58 @@ Get your API key at [app.honcho.dev](https://app.honcho.dev). Follow the [offici
 pip install honcho-ai pyyaml
 ```
 
+## Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `honcho-query` | Query what Honcho learned about a user |
+| `honcho-store` | Store messages for memory extraction |
+| `honcho-status` | Check system health and statistics |
+| `honcho-wipe` | Clear workspace data (destructive) |
+| `honcho-migrate` | Copy/move data between workspaces |
+| `honcho-wiki` | Export/import to Obsidian markdown |
+
 ## Commands
 
 | Command | Description |
 |---------|-------------|
 | `/honcho-export` | Export Honcho workspace to markdown wiki |
 | `/honcho-import` | Import markdown wiki back into Honcho |
+| `/honcho-install` | Show local setup instructions |
 
-## Wiki Export
+## Quick Start
 
 ```bash
+# Check system health
+python plugins/honcho-bridge/scripts/honcho_status.py --workspace my-project
+
+# Store a message
+python plugins/honcho-bridge/scripts/honcho_store.py \
+  --workspace my-project --peer alice --session test \
+  --message "I prefer Neovim for TypeScript development"
+
+# Wait ~1 minute for deriver, then query
+python plugins/honcho-bridge/scripts/honcho_query.py \
+  --workspace my-project --peer alice \
+  --query "What editor does this user prefer?"
+
+# Export to wiki for inspection
 python plugins/honcho-bridge/scripts/to_wiki.py \
-  --base-url http://localhost:8000 \
-  --workspace my-workspace \
-  --output wiki/
+  --workspace my-project --output wiki/
 ```
 
-Creates:
-```
-wiki/
-├── index.md          # catalog
-├── peers/            # one page per user/agent identity
-└── sessions/         # full conversation transcripts
-```
+## Why Local Honcho?
 
-Open the `wiki/` folder in [Obsidian](https://obsidian.md) for graph view and backlink navigation.
+Running Honcho locally gives you:
 
-## Wiki Import
-
-```bash
-python plugins/honcho-bridge/scripts/wiki_to_honcho.py \
-  --base-url http://localhost:8000 \
-  --workspace my-workspace \
-  --wiki wiki/
-```
-
-Reads YAML frontmatter + `## Transcript` sections from session pages and re-creates peers, sessions, and messages in Honcho.
-
-## Local Stack (Ollama, no API key)
-
-The official plugin supports local endpoints:
-
-```bash
-export HONCHO_ENDPOINT="local"   # points to http://localhost:8000
-```
-
-For the full Docker + Ollama setup (including required source patches for local embedding models), see [`docs/HONCHO_SETUP_GUIDE.md`](docs/HONCHO_SETUP_GUIDE.md).
+- **Privacy** — All data stays on your machine
+- **No API costs** — Use your own Ollama models
+- **Offline** — Works without internet
+- **Control** — Modify source, customize models
+- **Speed** — Local inference can be faster than cloud
 
 ## Links
 
 - [Honcho](https://github.com/plastic-labs/honcho) — the memory platform
-- [claude-honcho](https://github.com/plastic-labs/claude-honcho) — official Claude Code plugin
-- [app.honcho.dev](https://app.honcho.dev) — get your API key
-- [Karpathy LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) — inspiration for the wiki bridge
+- [Setup Guide](docs/HONCHO_SETUP_GUIDE.md) — full local Docker + Ollama instructions
+- [claude-honcho](https://github.com/plastic-labs/claude-honcho) — official cloud plugin

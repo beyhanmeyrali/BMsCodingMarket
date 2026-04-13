@@ -36,17 +36,23 @@ The key mental model: **observations compound**. Every conversation makes the ag
 graph LR
     subgraph Without_Honcho["Without Honcho"]
         direction TB
-        S1["Session 1\n'I use TypeScript'"] -.->|forgotten| S2["Session 2\n(starts blank)"]
-        S2 -.->|forgotten| S3["Session 3\n(starts blank)"]
+        S1["Session 1\n'I use TypeScript'"] -.-> S2["Session 2\n(starts blank)"]
+        S2 -.-> S3["Session 3\n(starts blank)"]
     end
 
     subgraph With_Honcho["With Honcho"]
         direction TB
-        H1["Session 1\n'I use TypeScript'"] -->|extracted| OBS["Observations\n• user uses TypeScript\n• user works in fintech\n• user prefers concise answers"]
-        H2["Session 2"] -->|peer.chat()| OBS
-        H3["Session 3"] -->|peer.chat()| OBS
-        OBS -->|grows richer| OBS
+        H1["Session 1\n'I use TypeScript'"] --> OBS["Observations\n• user uses TypeScript\n• user works in fintech\n• user prefers concise answers"]
+        H2["Session 2"] --> OBS
+        H3["Session 3"] --> OBS
+        OBS --> OBS2["Observations\n(grows richer)"]
     end
+
+    style S1 fill:#f9f,stroke:#333,stroke-width:1px
+    style S2 fill:#f9f,stroke:#333,stroke-width:1px
+    style S3 fill:#f9f,stroke:#333,stroke-width:1px
+    style OBS fill:#bbf,stroke:#333,stroke-width:2px
+    style OBS2 fill:#bbf,stroke:#333,stroke-width:2px
 ```
 
 ### Core Concepts
@@ -71,9 +77,13 @@ graph TD
     P1 --> O1["Observation: alice uses vim"]
     P1 --> O2["Observation: alice works in fintech"]
     P1 --> O3["Observation: alice prefers concise answers"]
-    S1 -.->|deriver extracts| O1
-    S1 -.->|deriver extracts| O2
-    S2 -.->|deriver extracts| O3
+    S1 -.-> O1
+    S1 -.-> O2
+    S2 -.-> O3
+
+    style O1 fill:#bbf,stroke:#333,stroke-width:1px
+    style O2 fill:#bbf,stroke:#333,stroke-width:1px
+    style O3 fill:#bbf,stroke:#333,stroke-width:1px
 ```
 
 ### How the Deriver Works
@@ -180,24 +190,32 @@ An agent can be its own peer. It stores observations about its own behaviour, mi
 ```mermaid
 graph LR
     subgraph Roles
-        Dev["Developer / Agent\n(writes messages, calls peer.chat)"]
-        Deriver["Deriver\n(background, auto-runs)"]
-        User["End User\n(their data is being remembered)"]
-        Admin["Admin\n(manages workspaces, exports)"]
+        Dev["Developer / Agent"]
+        Deriver["Deriver"]
+        User["End User"]
+        Admin["Admin"]
     end
 
     subgraph Honcho
         API["Honcho API"]
-        DB["Postgres + pgvector"]
+        DB["Postgres"]
         Worker["Deriver Worker"]
     end
 
-    Dev -->|"add_messages(), peer.chat()"| API
-    Deriver -->|automatic| Worker
+    Dev --> API
+    Deriver --> Worker
     Worker --> DB
-    Admin -->|"to_wiki.py export"| API
+    Admin --> API
     API --> DB
-    User -.->|"is represented as a Peer"| DB
+    User -.-> DB
+
+    noteDev[writes messages and queries]
+    noteAdmin[exports with to_wiki.py]
+    noteUser[represented as Peer]
+
+    Dev -.-> noteDev
+    Admin -.-> noteAdmin
+    User -.-> noteUser
 ```
 
 | Role | Interaction with Honcho |
@@ -226,31 +244,31 @@ graph LR
 ```mermaid
 graph TD
     subgraph Host["Windows Host"]
-        Ollama["Ollama\n(inference server)\nport 11434"]
-        SDK["honcho-ai SDK\n(Python, pip installed)"]
-        Scripts["to_wiki.py / wiki_to_honcho.py\n(export/import scripts)"]
+        Ollama["Ollama\nport 11434"]
+        SDK["honcho-ai SDK\nPython"]
+        Scripts["wiki scripts"]
     end
 
-    subgraph Docker["Docker (Linux containers)"]
-        API["honcho-api\n(FastAPI, port 8000)"]
-        Deriver["honcho-deriver\n(background worker)"]
-        Postgres["postgres + pgvector\n(port 5432)"]
-        Redis["redis\n(port 6379)"]
+    subgraph Docker["Docker"]
+        API["honcho-api\nport 8000"]
+        Deriver["honcho-deriver"]
+        Postgres["postgres"]
+        Redis["redis"]
     end
 
     subgraph Ollama_Models["Ollama Models"]
-        NothinkModel["qwen3-nothink:latest\n(deriver LLM + dialectic)"]
-        EmbedModel["qwen3-embedding:0.6b\n(1024-dim embeddings)"]
+        NothinkModel["qwen3-nothink"]
+        EmbedModel["qwen3-embedding"]
     end
 
-    SDK -->|"HTTP POST /v3/..."| API
-    Scripts -->|"HTTP POST /v3/..."| API
+    SDK --> API
+    Scripts --> API
     API --> Postgres
     API --> Redis
     Deriver --> Postgres
     Deriver --> Redis
-    Deriver -->|"OpenAI-compat\nPOST /v1/chat/completions"| Ollama
-    API -->|"OpenAI-compat\nPOST /v1/embeddings"| Ollama
+    Deriver --> Ollama
+    API --> Ollama
     Ollama --> NothinkModel
     Ollama --> EmbedModel
 ```
