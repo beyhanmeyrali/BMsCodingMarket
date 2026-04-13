@@ -50,6 +50,59 @@ docker compose up -d --build
 /plugin install honcho-bridge@bms-marketplace
 ```
 
+---
+
+## Quick Start: Manual Usage (No Hooks Required)
+
+Want to manually add memories or query without automatic hooks? Here's the essentials:
+
+### Store Information to Memory
+
+```bash
+# Store a preference, decision, or fact
+python plugins/honcho-bridge/scripts/honcho_store.py \
+  --workspace my-project \
+  --peer your-name \
+  --session manual-entry \
+  --message "I prefer TypeScript for frontend projects"
+```
+
+**Store multiple facts at once:**
+```bash
+python plugins/honcho-bridge/scripts/honcho_store.py \
+  --workspace my-project \
+  --peer your-name \
+  --session setup \
+  --message "I work in fintech" \
+  --message "I use Neovim as my editor" \
+  --message "I test code before committing"
+```
+
+### Query What Was Learned
+
+Wait ~1 minute after storing (for deriver processing), then query:
+
+```bash
+python plugins/honcho-bridge/scripts/honcho_query.py \
+  --workspace my-project \
+  --peer your-name \
+  --query "What are my coding preferences?"
+```
+
+### Check System Status
+
+```bash
+python plugins/honcho-bridge/scripts/honcho_status.py \
+  --workspace my-project
+```
+
+**Output shows:**
+- Connection status
+- Peer/session/message counts
+- Warning if deriver hasn't processed yet
+
+---
+
 ## Skills & Commands
 
 ### Skills
