@@ -16,7 +16,8 @@ The plugin is a thin bridge between Claude Code and the official Honcho memory p
 | Honcho FastAPI server | REST API for memory storage/retrieval | Docker (`honcho-api-1`) |
 | Postgres + pgvector | Persistent storage | Docker (`honcho-database-1`) |
 | Redis | Caching layer | Docker (`honcho-redis-1`) |
-| Ollama + qwen3.5:9b | Local LLM for `peer.chat()` and dialectic | Host (ollama serve) |
+| Ollama + qwen3-nothink:latest | Local LLM for deriver, dialectic, peer.chat() | Host (ollama serve) |
+| Ollama + qwen3-embedding:0.6b | Embedding messages and observations (1024-dim) | Host (ollama serve) |
 
 ### Why Docker for the server?
 
@@ -90,20 +91,23 @@ The import parser is stateful: `### timestamp` resets current speaker, `**Name**
 
 ---
 
-## .env Minimal Config (Docker Compose)
+## .env Working Config (Docker Compose)
+
+> Full config with all options documented in `docs/HONCHO_SETUP_GUIDE.md`.
 
 ```bash
-# Database — internal Docker network hostname
 DB_CONNECTION_URI=postgresql+psycopg://honcho:honcho_password@database:5432/honcho_dev
-
-# Ollama on the host machine
+AUTH_USE_AUTH=false
 LLM_OPENAI_COMPATIBLE_BASE_URL=http://host.docker.internal:11434/v1
 LLM_OPENAI_COMPATIBLE_API_KEY=sk-placeholder
-
-# Disable background LLM workers (not needed for storage/retrieval)
-EMBED_MESSAGES=false
-DERIVER_ENABLED=false
-SUMMARY_ENABLED=false
-DREAM_ENABLED=false
-AUTH_USE_AUTH=false
+LLM_EMBEDDING_PROVIDER=openrouter
+LLM_EMBEDDING_MODEL=qwen3-embedding:0.6b
+EMBED_MESSAGES=true
+VECTOR_STORE_DIMENSIONS=1024
+DERIVER_ENABLED=true
+DERIVER_PROVIDER=custom
+DERIVER_MODEL=qwen3-nothink:latest
+DERIVER_MAX_OUTPUT_TOKENS=4096
+DERIVER_STALE_SESSION_TIMEOUT_MINUTES=1
+DERIVER_FLUSH_ENABLED=true
 ```
