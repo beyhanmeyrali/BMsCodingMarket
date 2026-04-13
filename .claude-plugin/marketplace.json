@@ -1,0 +1,18 @@
+{
+  "name": "bms-marketplace",
+  "description": "Local-first AI agent utilities - memory, reasoning, and development tools",
+  "version": "1.0.0",
+  "owner": {
+    "name": "Beyhan Meyrali",
+    "email": "beyhanmeyrali@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "honcho-local",
+      "description": "Local-first memory and reasoning for AI agents using Ollama - no API keys required",
+      "version": "1.0.0",
+      "source": "./plugins/honcho-local",
+      "tags": ["memory", "ollama", "local-llm", "agent", "reasoning"]
+    }
+  ]
+}

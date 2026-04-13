@@ -1,0 +1,12 @@
+{
+  "name": "honcho-local",
+  "version": "1.0.0",
+  "description": "Local-first memory and reasoning for AI agents using Ollama. Provides peer-based user modeling, session management, and natural language queries about user behavior - all running locally with no API keys required.",
+  "author": {
+    "name": "Beyhan Meyrali",
+    "email": "beyhanmeyrali@gmail.com"
+  },
+  "homepage": "https://github.com/beyhanmeyrali/BMsCodingMarket",
+  "repository": "https://github.com/beyhanmeyrali/BMsCodingMarket",
+  "license": "MIT"
+}

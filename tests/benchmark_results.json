@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-04-13T11:59:47.140130",
+  "results": {
+    "write": {
+      "total_messages": 20,
+      "total_time": 0.1006203000433743,
+      "avg_time_per_message": 0.005031015002168715,
+      "messages_per_second": 198.76704791556594
+    },
+    "read": {
+      "reads": 10,
+      "total_time": 7.650005863979459e-05,
+      "avg_time": 7.650005863979459e-06
+    },
+    "chat": {
+      "queries": 2,
+      "total_time": 71.11656600004062,
+      "avg_time": 35.55828300002031,
+      "tokens_per_second": 14.061421357148049
+    },
+    "search": {
+      "searches": 6,
+      "total_time": 36.404008399986196,
+      "avg_time": 6.067334733331033,
+      "relevance_score": 100.0,
+      "top_results": [
+        {
+          "query": "database performance",
+          "top_content": "How can I speed up slow SQL queries?..."
+        },
+        {
+          "query": "python concurrency",
+          "top_content": "How do I use async/await in Python?..."
+        },
+        {
+          "query": "container technology",
+          "top_content": "What's the difference between Docker and VMs?..."
+        },
+        {
+          "query": "version control",
+          "top_content": "What's git rebase vs merge?..."
+        },
+        {
+          "query": "web styling",
+          "top_content": "How do I center a div with Flexbox?..."
+        },
+        {
+          "query": "caching strategies",
+          "top_content": "How do I use Redis for caching?..."
+        }
+      ]
+    },
+    "representation": {
+      "time": 120.73641090001911,
+      "fields_extracted": 1
+    }
+  }
+}

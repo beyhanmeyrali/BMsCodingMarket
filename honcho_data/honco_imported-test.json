@@ -1,0 +1,12 @@
+{
+  "workspaces": {},
+  "peers": {
+    "imported-test:bms-marketplace": {
+      "id": "bms-marketplace",
+      "name": "BMsCodingMarket",
+      "peer_type": "agent",
+      "metadata": {
+        "peer_id": "bms-marketplace",
+        "name": "BMsCodingMarket",
+        "peer_type": "agent",
+        "created_at": 

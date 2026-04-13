@@ -1,0 +1,17 @@
+{
+  "description": "Local Honcho plugin hooks",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo honcho-local plugin ready - ensure ollama serve is running",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
