@@ -1,3 +1,5 @@
 {
-  "description": "honcho-bridge: Local Honcho integration with wiki export/import for knowledge management. Works with local Honcho API at localhost:8000."
+  "description": "honcho-bridge: Local Honcho integration with automatic memory hooks. Loads context at session start, saves messages at session end.",
+  "SessionStart": "python plugins/honcho-bridge/hooks/load_memory.py",
+  "SessionEnd": "python plugins/honcho-bridge/hooks/save_messages.py"
 }
