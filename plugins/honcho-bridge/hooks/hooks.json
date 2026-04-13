@@ -1,5 +1,29 @@
 {
-  "description": "honcho-bridge: Local Honcho integration with automatic memory hooks. Loads context at session start, saves messages at session end.",
-  "SessionStart": "python plugins/honcho-bridge/hooks/load_memory.py",
-  "SessionEnd": "python plugins/honcho-bridge/hooks/save_messages.py"
+  "description": "honcho-bridge: Local Honcho integration with automatic memory hooks.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/load_memory.py\"",
+            "async": false
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/save_messages.py\"",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
 }
