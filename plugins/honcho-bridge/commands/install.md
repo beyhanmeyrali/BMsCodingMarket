@@ -84,6 +84,88 @@ print(f"Created peer: {user.id}")
                     └─────────────┘
 ```
 
+## Step 5: Wire Up Auto-Memory Hooks
+
+After verifying the server is running, set up the opencode plugin hooks so the agent **automatically stores session summaries to Honcho** when it finishes each turn.
+
+Create `.opencode/plugins/honcho-memory.ts` in the project root:
+
+```typescript
+import type { Plugin } from "@opencode-ai/plugin"
+import * as path from "path"
+
+const SCRIPTS_DIR = path.resolve(
+  import.meta.dirname,
+  "../../plugins/honcho-bridge/scripts"
+)
+
+async function storeToHoncho($: any, sessionId: string, summary: string) {
+  const script = path.join(SCRIPTS_DIR, "store_to_honcho.py")
+  const escaped = summary.replace(/'/g, "'\\''")
+  try {
+    await $`python "${script}" --session-id "${sessionId}" --summary "${escaped}"`
+  } catch (err) {
+    console.error("[honcho-memory] Failed to store:", err)
+  }
+}
+
+export const HonchoMemoryPlugin: Plugin = async ({ client, $ }) => {
+  const storedSessions = new Set<string>()
+
+  return {
+    "experimental.session.compacting": async (input, output) => {
+      const sessionId: string = (input as any).session?.id ?? "unknown"
+      storedSessions.add(`compact:${sessionId}`)
+      const summary = output.prompt
+        ? `[Compaction] ${output.prompt.slice(0, 2000)}`
+        : `[Session compacted: ${sessionId}]`
+      await storeToHoncho($, sessionId, summary)
+    },
+
+    "session.idle": async ({ event }: any) => {
+      const sessionId: string = event?.properties?.id ?? "unknown"
+      if (storedSessions.has(`compact:${sessionId}`)) return
+
+      const messages = await client.session.messages({ path: { id: sessionId } })
+      const recent = (messages.data ?? []).slice(-6)
+      const lines: string[] = []
+      for (const m of recent) {
+        for (const part of m.parts ?? []) {
+          if ((part as any).type === "text" && (part as any).text?.trim()) {
+            const role = m.info?.role === "assistant" ? "Agent" : "User"
+            lines.push(`${role}: ${(part as any).text.trim().slice(0, 500)}`)
+          }
+        }
+      }
+      if (lines.length === 0) return
+      await storeToHoncho($, sessionId, `[Session ${sessionId}]\n${lines.join("\n")}`)
+      storedSessions.add(`idle:${sessionId}`)
+    },
+  }
+}
+```
+
+Also create `.opencode/package.json` so opencode installs the plugin type dependency:
+
+```json
+{
+  "dependencies": {
+    "@opencode-ai/plugin": "latest"
+  }
+}
+```
+
+Verify the hook script works:
+
+```bash
+python plugins/honcho-bridge/scripts/store_to_honcho.py \
+  --session-id test-001 \
+  --summary "Hook test successful"
+# → [honcho-memory] Stored summary for session opencode-test-001
+```
+
+From this point on, every time the agent finishes a turn, the session content is stored to Honcho and becomes queryable via `peer.chat()` in future sessions.
+
 ## Next Steps
 
 - Use `/honcho-export` to export memory to wiki format

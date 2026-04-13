@@ -1,14 +1,28 @@
 {
-  "description": "Local Honcho plugin hooks",
+  "description": "Honcho memory hooks — stores each agent turn and compaction summaries to Honcho automatically",
   "hooks": {
-    "SessionStart": [
+    "Stop": [
       {
-        "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "echo honcho-local plugin ready - ensure ollama serve is running",
-            "timeout": 5
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/on_agent_stop.py\"",
+            "async": true,
+            "timeout": 30,
+            "statusMessage": "Storing session to Honcho memory..."
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/on_agent_stop.py\"",
+            "async": true,
+            "timeout": 30,
+            "statusMessage": "Storing compaction summary to Honcho memory..."
           }
         ]
       }

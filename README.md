@@ -50,6 +50,7 @@ flowchart LR
 | Feature | Description |
 |---------|-------------|
 | **Local Honcho Guide** | Skills that teach Claude Code how to use Honcho with Ollama |
+| **Auto-Memory Hooks** | opencode plugin hooks that store session summaries to Honcho automatically when the agent finishes |
 | **Wiki Export** | Export agent memory to Obsidian-compatible markdown |
 | **Wiki Import** | Import documentation into agent memory |
 | **100% Local** | No API keys, works offline |
@@ -174,7 +175,7 @@ Imports existing documentation into Honcho for agent knowledge.
 
 | Command | Purpose |
 |---------|---------|
-| `/honcho-install` | Install Honcho + Ollama + Postgres |
+| `/honcho-install` | Install Honcho + Ollama + Postgres + wire up auto-memory hooks |
 | `/honcho-export` | Export memory to wiki markdown |
 | `/honcho-import` | Import wiki to Honcho memory |
 
