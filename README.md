@@ -1,20 +1,19 @@
-# honcho-bridge
+# BMsCodingMarket
 
-> **Fully local Honcho memory integration for Claude Code** — no API key, no cloud, just your own Docker + Ollama stack.
+> **Claude Code plugins for local AI development** — Fully offline memory, wiki bridge, and workflow automation.
 
-**Why this exists:** The official [plastic-labs/claude-honcho](https://github.com/plastic-labs/claude-honcho) plugin is excellent for cloud usage, but it requires `bun` (a JavaScript runtime) and connects to the paid Honcho cloud service. For developers who want **100% local, offline memory** with their own Ollama models, the official plugin doesn't fit.
+## Featured Plugin: honcho-bridge
 
-`honcho-bridge` provides a Python-based alternative with skills and scripts that work directly with your local Honcho API at `localhost:8000`.
+**`honcho-bridge`** is a Python-based Claude Code plugin for working with a **local Honcho memory system**. It enables persistent AI memory that runs entirely on your machine — no API keys, no cloud, no monthly fees.
 
-## What this is
+### Why honcho-bridge?
 
-A Claude Code plugin for working with a **local Honcho memory system** running via Docker + Ollama. It provides:
+The official [plastic-labs/claude-honcho](https://github.com/plastic-labs/claude-honcho) plugin is great for cloud usage, but it requires `bun` (JavaScript runtime) and connects to a paid cloud service. `honcho-bridge` is built for developers who want:
 
-- **Skills** for querying, storing, and managing memory
-- **Wiki export/import** to readable Obsidian-compatible markdown
-- **Full offline operation** — no API keys, no internet required
-
-## Cloud vs Local
+- **100% offline** operation — your data never leaves your machine
+- **No API costs** — use your own Ollama models
+- **Python native** — no bun, node, or JavaScript runtimes needed
+- **Full control** — modify, extend, and inspect everything
 
 | | Official Plugin | honcho-bridge |
 |---|---|---|
@@ -22,50 +21,49 @@ A Claude Code plugin for working with a **local Honcho memory system** running v
 | **Backend** | app.honcho.dev (cloud) | localhost:8000 (Docker) |
 | **API Key** | Required | Not needed |
 | **Internet** | Required | Fully offline |
-| **LLM** | Cloud (paid) | Ollama (local) |
-| **Best for** | Quick setup, cloud users | Privacy, offline, local LLMs |
+| **LLM** | Cloud (paid per token) | Ollama (local, free) |
+| **Best for** | Quick cloud setup | Privacy, offline, local LLMs |
 
-## Setup
+## Quick Start
 
-### 1. Run local Honcho (Docker + Ollama)
+### 1. Install Dependencies
 
-Follow the full setup guide in **[`docs/HONCHO_SETUP_GUIDE.md`](docs/HONCHO_SETUP_GUIDE.md)**:
+```bash
+pip install honcho-ai pyyaml
+```
+
+### 2. Start Local Honcho (Docker + Ollama)
+
+Follow the full setup guide: **[`docs/HONCHO_SETUP_GUIDE.md`](docs/HONCHO_SETUP_GUIDE.md)**
 
 ```powershell
-# Clone Honcho server
 git clone https://github.com/plastic-labs/honcho.git E:\workspace\honcho
-
-# Apply source patches for local Ollama
-# Configure .env for localhost:8000
-# Run with Docker
+cd E:\workspace\honcho
+# Apply patches, configure .env, then:
 docker compose up -d --build
 ```
 
-### 2. Install this plugin
+### 3. Install the Plugin
 
 ```
 /plugin marketplace add beyhanmeyrali/BMsCodingMarket
 /plugin install honcho-bridge@bms-marketplace
 ```
 
-### 3. Install Python dependencies
+## Skills & Commands
 
-```bash
-pip install honcho-ai pyyaml
-```
-
-## Skills
+### Skills
 
 | Skill | Purpose |
 |-------|---------|
-| `honcho-query` | Query what Honcho learned about a user |
-| `honcho-store` | Store messages for memory extraction |
-| `honcho-status` | Check system health and statistics |
-| `honcho-wipe` | Clear workspace data (destructive) |
+| `honcho-query` | Query what Honcho learned about a user via `peer.chat()` |
+| `honcho-store` | Store messages for memory extraction and observation |
+| `honcho-status` | Check system health, statistics, and deriver status |
+| `honcho-wipe` | Clear workspace data (destructive, requires confirmation) |
 | `honcho-migrate` | Copy/move data between workspaces |
-| `honcho-wiki` | Export/import to Obsidian markdown |
+| `honcho-wiki` | Export/import memory to Obsidian-compatible markdown |
 
-## Commands
+### Commands
 
 | Command | Description |
 |---------|-------------|
@@ -73,18 +71,19 @@ pip install honcho-ai pyyaml
 | `/honcho-import` | Import markdown wiki back into Honcho |
 | `/honcho-install` | Show local setup instructions |
 
-## Quick Start
+## Usage Examples
 
 ```bash
 # Check system health
-python plugins/honcho-bridge/scripts/honcho_status.py --workspace my-project
+python plugins/honcho-bridge/scripts/honcho_status.py \
+  --workspace my-project
 
-# Store a message
+# Store a message for memory extraction
 python plugins/honcho-bridge/scripts/honcho_store.py \
   --workspace my-project --peer alice --session test \
   --message "I prefer Neovim for TypeScript development"
 
-# Wait ~1 minute for deriver, then query
+# Query what Honcho learned (wait ~1 min after storing)
 python plugins/honcho-bridge/scripts/honcho_query.py \
   --workspace my-project --peer alice \
   --query "What editor does this user prefer?"
@@ -92,20 +91,104 @@ python plugins/honcho-bridge/scripts/honcho_query.py \
 # Export to wiki for inspection
 python plugins/honcho-bridge/scripts/to_wiki.py \
   --workspace my-project --output wiki/
+
+# Import edited wiki back to Honcho
+python plugins/honcho-bridge/scripts/wiki_to_honcho.py \
+  --workspace my-project --wiki wiki/
 ```
+
+## How Honcho Memory Works
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     Session 1                                    │
+│  "I use TypeScript, prefer Neovim, work in fintech"            │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Honcho Deriver                                │
+│  (background worker, runs every ~1 minute)                      │
+│                                                                 │
+│  • Reads messages                                               │
+│  • Calls local LLM (Ollama)                                     │
+│  • Extracts structured observations                             │
+│  • Stores with vector embeddings                                │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Observations                                 │
+│  • User prefers TypeScript                                      │
+│  • User uses Neovim as editor                                   │
+│  • User works in fintech industry                               │
+│  • User prefers concise answers                                 │
+└──────────────────────────┬──────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Session 2 (later)                            │
+│  "Help me add auth"                                             │
+│                                                                 │
+│  Agent already knows: TypeScript stack, Neovim, fintech        │
+│  No need to repeat context!                                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Project Structure
+
+```
+BMsCodingMarket/
+├── plugins/
+│   └── honcho-bridge/          # Main plugin
+│       ├── commands/            # Slash commands
+│       ├── skills/              # Reusable skills
+│       ├── scripts/             # Python utilities
+│       │   ├── honcho_query.py
+│       │   ├── honcho_store.py
+│       │   ├── honcho_status.py
+│       │   ├── honcho_wipe.py
+│       │   ├── honcho_migrate.py
+│       │   ├── to_wiki.py
+│       │   └── wiki_to_honcho.py
+│       └── hooks/               # Event automation
+├── docs/
+│   └── HONCHO_SETUP_GUIDE.md    # Full local setup guide
+└── README.md
+```
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Honcho Setup Guide](docs/HONCHO_SETUP_GUIDE.md) | Complete guide for running Honcho locally with Docker + Ollama on Windows |
 
 ## Why Local Honcho?
 
-Running Honcho locally gives you:
+- **Privacy** — All conversations and observations stay on your machine
+- **No API costs** — Use your own Ollama models (qwen3, llama3, mistral, etc.)
+- **Offline** — Works without internet after initial model download
+- **Control** — Modify source, customize models, inspect everything
+- **Speed** — Local inference can be faster than cloud API calls
+- **Compliance** — Keep sensitive code and discussions in-house
 
-- **Privacy** — All data stays on your machine
-- **No API costs** — Use your own Ollama models
-- **Offline** — Works without internet
-- **Control** — Modify source, customize models
-- **Speed** — Local inference can be faster than cloud
+## Requirements
+
+- **Docker Desktop** (Linux containers mode)
+- **Ollama** — Local inference server
+- **Python 3.10+** with `pip`
+- **Claude Code** — CLI or desktop app
 
 ## Links
 
-- [Honcho](https://github.com/plastic-labs/honcho) — the memory platform
-- [Setup Guide](docs/HONCHO_SETUP_GUIDE.md) — full local Docker + Ollama instructions
-- [claude-honcho](https://github.com/plastic-labs/claude-honcho) — official cloud plugin
+- [Honcho](https://github.com/plastic-labs/honcho) — The memory platform
+- [claude-honcho](https://github.com/plastic-labs/claude-honcho) — Official cloud plugin
+- [Ollama](https://ollama.com) — Local LLM runner
+
+## License
+
+MIT
+
+---
+
+**Author:** [Beyhan Meyrali](https://github.com/beyhanmeyrali)
