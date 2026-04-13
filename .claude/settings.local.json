@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rmdir \"C:/Users/beyha/.claude/plugins/cache/honcho\")",
+      "Read(//c/Users/beyha/.claude/plugins/cache/**)"
+    ]
+  }
+}

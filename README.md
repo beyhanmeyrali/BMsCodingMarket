@@ -45,10 +45,20 @@ docker compose up -d --build
 
 ### 3. Install the Plugin
 
+**Important:** If you have the official `plastic-labs/claude-honcho` plugin installed, uninstall it first to avoid conflicts:
+
+```
+/plugin marketplace remove plastic-labs/claude-honcho
+```
+
+Then install this plugin:
+
 ```
 /plugin marketplace add beyhanmeyrali/BMsCodingMarket
 /plugin install honcho-bridge@bms-marketplace
 ```
+
+**Why?** The official plugin requires `bun` (JavaScript runtime) and connects to cloud API. Our plugin uses Python and your local Docker setup. Having both installed causes hook conflicts and `bun` errors.
 
 ---
 
@@ -90,6 +100,18 @@ Once installed, use these commands in Claude Code:
 ### Automatic Hooks
 
 The plugin includes automatic memory hooks — no manual commands needed:
+
+**Smart Configuration:** On first run, if `.env` doesn't exist, the plugin automatically:
+- Uses your current folder name as the workspace ID
+- Uses your git username as your peer ID
+- Creates `.env` file for you
+
+You can edit `.env` anytime to change these values.
+
+| Hook | When It Runs | What It Does |
+|------|--------------|--------------|
+| **SessionStart** | When you start a new Claude session | Loads your context from Honcho memory |
+| **SessionEnd** | When session ends | Saves conversation for observation extraction |
 
 | Hook | When It Runs | What It Does |
 |------|--------------|--------------|
