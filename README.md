@@ -574,6 +574,113 @@ memory = get_local_honcho(
 
 **Best for:** Production, multiple processes, better performance
 
+## Multi-Agent Knowledge Sharing
+
+### The Problem with JSON-Only Storage
+
+With JSON storage, each project's knowledge is **isolated**:
+
+```
+project-a/
+└── honco_project-a.json    # Only knows about Project A
+
+project-b/
+└── honco_project-b.json    # Only knows about Project B
+```
+
+**Agent A** in Project A cannot learn from **Agent B** in Project B. Knowledge is siloed.
+
+### Solution: Shared Postgres Database
+
+With Postgres, all agents share the same knowledge base:
+
+```python
+# Project A's agent
+memory_a = get_local_honcho(
+    workspace_id="project-a",
+    use_postgres=True,
+    postgres_uri="postgresql://user:pass@localhost/honco_shared"
+)
+
+# Project B's agent
+memory_b = get_local_honcho(
+    workspace_id="project-b",
+    use_postgres=True,
+    postgres_uri="postgresql://user:pass@localhost/honco_shared"  # SAME DB!
+)
+
+# Now agents can share knowledge!
+# Both workspaces stored in same database
+```
+
+### Setup Postgres for Multi-Agent Sharing
+
+**Option 1: Docker (Recommended)**
+
+```bash
+docker run -d \
+  --name honco-postgres \
+  -e POSTGRES_PASSWORD=honco123 \
+  -e POSTGRES_DB=honco_shared \
+  -p 5432:5432 \
+  postgres:16
+```
+
+**Option 2: Local Installation**
+
+```bash
+# Ubuntu/Debian
+sudo apt install postgresql postgresql-contrib
+sudo -u postgres createdb honco_shared
+
+# macOS
+brew install postgresql
+brew services start postgresql
+createdb honco_shared
+
+# Windows
+# Download from https://www.postgresql.org/download/windows/
+```
+
+### JSON vs Postgres: What Do You Lose?
+
+| Feature | JSON Storage | Postgres Storage |
+|---------|--------------|------------------|
+| **Setup complexity** | ✅ Zero config | ❌ Requires database |
+| **Portability** | ✅ Copy file, move anywhere | ❌ Need database dump/restore |
+| **Cross-project sharing** | ❌ **Each project isolated** | ✅ **All agents share knowledge** |
+| **Multi-agent concurrent access** | ❌ Single agent per file | ✅ **Many agents read/write together** |
+| **Organizational memory** | ❌ Siloed per project | ✅ **Centralized knowledge repository** |
+| **Performance at scale** | ❌ Full file scan | ✅ **Indexed queries** |
+| **Data integrity** | ❌ Race conditions possible | ✅ **ACID guarantees** |
+| **Vector search** | ⚠️ In-memory, lost on restart | ✅ **Persistent with pgvector** |
+
+### When to Use Each
+
+| Scenario | Recommended | Why |
+|----------|-------------|-----|
+| Single developer, one project | **JSON** | Simple, portable |
+| Testing and development | **JSON** | Easy to reset, inspect |
+| Multi-agent organization | **Postgres** | Shared knowledge base |
+| Production with multiple users | **Postgres** | Concurrent access, reliability |
+| Large-scale deployments (100K+ messages) | **Postgres** | Performance, indexing |
+
+### Centralized Knowledge Example
+
+With Postgres, you can query across all workspaces:
+
+```python
+# Agent A learns about user preferences
+memory_a = get_local_honcho(workspace_id="support-bot", use_postgres=True, postgres_uri="...")
+memory_a.chat("user-123", "What does this user prefer?")
+
+# Agent B benefits from that knowledge!
+memory_b = get_local_honcho(workspace_id="sales-bot", use_postgres=True, postgres_uri="...")
+# Can access the same user representation, no need to re-learn
+```
+
+**This is the key difference**: JSON = isolated knowledge, Postgres = organizational memory.
+
 ## Comparisons
 
 ### vs Official Honcho
