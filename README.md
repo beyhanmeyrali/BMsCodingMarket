@@ -52,77 +52,40 @@ docker compose up -d --build
 
 ---
 
-## Quick Start: Manual Usage (No Hooks Required)
+## Quick Start: Using the Plugin
 
-Want to manually add memories or query without automatic hooks? Here's the essentials:
+Once installed, use these commands in Claude Code:
 
 ### Store Information to Memory
 
-```bash
-# Store a preference, decision, or fact
-python plugins/honcho-bridge/scripts/honcho_store.py \
-  --workspace my-project \
-  --peer your-name \
-  --session manual-entry \
-  --message "I prefer TypeScript for frontend projects"
+```
+/honcho-store "I prefer TypeScript for frontend projects"
 ```
 
-**Store multiple facts at once:**
-```bash
-python plugins/honcho-bridge/scripts/honcho_store.py \
-  --workspace my-project \
-  --peer your-name \
-  --session setup \
-  --message "I work in fintech" \
-  --message "I use Neovim as my editor" \
-  --message "I test code before committing"
+### Query Your Memory
+
 ```
-
-### Query What Was Learned
-
-Wait ~1 minute after storing (for deriver processing), then query:
-
-```bash
-python plugins/honcho-bridge/scripts/honcho_query.py \
-  --workspace my-project \
-  --peer your-name \
-  --query "What are my coding preferences?"
+/honcho-query "What are my coding preferences?"
 ```
 
 ### Check System Status
 
-```bash
-python plugins/honcho-bridge/scripts/honcho_status.py \
-  --workspace my-project
 ```
-
-**Output shows:**
-- Connection status
-- Peer/session/message counts
-- Warning if deriver hasn't processed yet
+/honcho-status
+```
 
 ---
 
-## Skills & Commands
+## Commands Reference
 
-### Skills
-
-| Skill | Purpose |
-|-------|---------|
-| `honcho-query` | Query what Honcho learned about a user via `peer.chat()` |
-| `honcho-store` | Store messages for memory extraction and observation |
-| `honcho-status` | Check system health, statistics, and deriver status |
-| `honcho-wipe` | Clear workspace data (destructive, requires confirmation) |
-| `honcho-migrate` | Copy/move data between workspaces |
-| `honcho-wiki` | Export/import memory to Obsidian-compatible markdown |
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `/honcho-export` | Export Honcho workspace to markdown wiki |
-| `/honcho-import` | Import markdown wiki back into Honcho |
-| `/honcho-install` | Show local setup instructions |
+| Command | Purpose |
+|---------|---------|
+| `/honcho-store` | Store facts/preferences to memory |
+| `/honcho-query` | Ask what Honcho knows about you |
+| `/honcho-status` | Check system health and stats |
+| `/honcho-export` | Export workspace to markdown wiki |
+| `/honcho-import` | Import markdown wiki back to Honcho |
+| `/honcho-install` | Show setup instructions |
 
 ### Automatic Hooks
 
@@ -143,32 +106,6 @@ HONCHO_BASE_URL=http://localhost:8000  # Local Honcho API
 ```
 
 **Note:** If using honcho-bridge, uninstall the official `plastic-labs/claude-honcho` plugin to avoid hook conflicts.
-
-## Usage Examples
-
-```bash
-# Check system health
-python plugins/honcho-bridge/scripts/honcho_status.py \
-  --workspace my-project
-
-# Store a message for memory extraction
-python plugins/honcho-bridge/scripts/honcho_store.py \
-  --workspace my-project --peer alice --session test \
-  --message "I prefer Neovim for TypeScript development"
-
-# Query what Honcho learned (wait ~1 min after storing)
-python plugins/honcho-bridge/scripts/honcho_query.py \
-  --workspace my-project --peer alice \
-  --query "What editor does this user prefer?"
-
-# Export to wiki for inspection
-python plugins/honcho-bridge/scripts/to_wiki.py \
-  --workspace my-project --output wiki/
-
-# Import edited wiki back to Honcho
-python plugins/honcho-bridge/scripts/wiki_to_honcho.py \
-  --workspace my-project --wiki wiki/
-```
 
 ## How Honcho Memory Works
 
