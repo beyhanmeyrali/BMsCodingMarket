@@ -71,6 +71,26 @@ docker compose up -d --build
 | `/honcho-import` | Import markdown wiki back into Honcho |
 | `/honcho-install` | Show local setup instructions |
 
+### Automatic Hooks
+
+The plugin includes automatic memory hooks — no manual commands needed:
+
+| Hook | When It Runs | What It Does |
+|------|--------------|--------------|
+| **SessionStart** | When you start a new Claude session | Loads your context from Honcho memory |
+| **SessionEnd** | When session ends | Saves conversation for observation extraction |
+
+**Configure hooks** by setting environment variables:
+
+```bash
+# In your system environment or .env file
+HONCHO_WORKSPACE=my-project       # Your workspace ID
+HONCHO_PEER_ID=user               # Your peer identifier
+HONCHO_BASE_URL=http://localhost:8000  # Local Honcho API
+```
+
+**Note:** If using honcho-bridge, uninstall the official `plastic-labs/claude-honcho` plugin to avoid hook conflicts.
+
 ## Usage Examples
 
 ```bash
