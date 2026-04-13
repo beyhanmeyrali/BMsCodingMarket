@@ -1,74 +1,72 @@
 ---
 name: honcho-install
-description: Install official Honcho memory system with Ollama locally. Sets up Postgres database, Honcho server, and Ollama for 100% local AI agent memory.
+description: Install official Honcho memory system with Ollama locally. Sets up Postgres database, Honcho server (via Docker), and Ollama for 100% local AI agent memory.
 ---
 
 # Honcho + Ollama Local Installation
 
 This command installs the official Honcho memory system with Ollama for 100% local AI agent memory.
 
+> **Windows users:** The Honcho server must run via Docker — it uses Linux-only system calls (`fcntl`) and cannot run natively on Windows. The Docker approach works on all platforms.
+
 ## What Gets Installed
 
 1. **Ollama** - Local LLM runner (qwen3.5:9b for chat, qwen3-embedding for search)
-2. **PostgreSQL + pgvector** - Database for Honcho storage
-3. **Honcho** - Official memory library for AI agents
-4. **Honcho SDK** - Python client (honcho-ai)
+2. **PostgreSQL + pgvector** - Database for Honcho storage (via Docker)
+3. **Honcho server** - Official FastAPI memory service (via Docker)
+4. **Honcho SDK** - Python client (`honcho-ai`)
 
 ## Quick Install
 
 ```bash
-# 1. Install Ollama
+# 1. Install Ollama and pull models
 curl -fsSL https://ollama.com/install.sh | sh
-
-# 2. Pull models
 ollama pull qwen3.5:9b
 ollama pull qwen3-embedding:0.6b
+ollama serve &
 
-# 3. Start Ollama
-ollama serve
+# 2. Install Honcho SDK
+pip install honcho-ai pyyaml
 
-# 4. Install Honcho SDK
-pip install honcho-ai psycopg2-binary
-
-# 5. Start Postgres with pgvector (Docker)
-docker run -d \
-  --name honcho-postgres \
-  -e POSTGRES_PASSWORD=honcho123 \
-  -e POSTGRES_DB=honcho_db \
-  -p 5432:5432 \
-  -v honcho_data:/var/lib/postgresql/data \
-  pgvector/pgvector:pg16
-
-# 6. Set environment variables
-export HONCHO_BASE_URL="http://localhost:8000"
-export DB_CONNECTION_URI="postgresql+psycopg://postgres:honcho123@localhost:5432/honcho_db"
-export LLM_OPENAI_API_BASE="http://localhost:11434/v1"
-export LLM_OPENAI_API_KEY="sk-placeholder"  # Ollama doesn't need real key
-export EMBEDDING_MODEL="qwen3-embedding:0.6b"
-export EMBEDDING_PROVIDER="openai"
-
-# 7. Clone and run Honcho server
+# 3. Clone Honcho and start via Docker Compose (works on Windows/Mac/Linux)
 git clone https://github.com/plastic-labs/honcho.git
 cd honcho
 cp .env.template .env
-# Edit .env with your DB_CONNECTION_URI and LLM settings
-uv run alembic upgrade head
-uv run fastapi dev src/main.py
+cp docker-compose.yml.example docker-compose.yml
+```
+
+Edit `.env` with these minimal settings:
+```bash
+DB_CONNECTION_URI=postgresql+psycopg://honcho:honcho_password@database:5432/honcho_dev
+LLM_OPENAI_COMPATIBLE_BASE_URL=http://host.docker.internal:11434/v1
+LLM_OPENAI_COMPATIBLE_API_KEY=sk-placeholder
+EMBED_MESSAGES=false
+DERIVER_ENABLED=false
+SUMMARY_ENABLED=false
+DREAM_ENABLED=false
+AUTH_USE_AUTH=false
+```
+
+```bash
+# 4. Build and start the full stack (Postgres + Redis + Honcho FastAPI server)
+# --build is required on first run — there's no pre-built image, it builds from source
+docker compose up -d --build
+
+# Server starts at http://localhost:8000
 ```
 
 ## Verify Installation
 
+```bash
+curl http://localhost:8000/health
+```
+
 ```python
 from honcho import Honcho
 
-# Test connection
-honcho = Honcho(workspace_id="test")
-
-# Create a peer
+honcho = Honcho(base_url="http://localhost:8000", workspace_id="test")
 user = honcho.peer("test-user")
 print(f"Created peer: {user.id}")
-
-# Success!
 ```
 
 ## Architecture
@@ -76,13 +74,13 @@ print(f"Created peer: {user.id}")
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │  Your App   │────▶│   Honcho    │────▶│  Postgres   │
-│             │     │   (FastAPI) │     │  + pgvector │
+│             │     │  (Docker)   │     │  (Docker)   │
 └─────────────┘     └─────────────┘     └─────────────┘
                            │
                            ▼
                     ┌─────────────┐
                     │   Ollama    │
-                    │ (qwen3.5)   │
+                    │ (local)     │
                     └─────────────┘
 ```
 

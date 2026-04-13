@@ -1,173 +1,109 @@
-# Honcho Local Setup for SAP AI Copilot
+# Honcho Bridge — Implementation Notes
 
-## What is Honcho?
+## Architecture
 
-Honcho is a **memory library for building stateful agents** that goes beyond simple RAG by using formal logic reasoning to extract latent information from conversations.
+The plugin is a thin bridge between Claude Code and the official Honcho memory platform. It provides:
 
-### Key Concepts
+1. **Skills** — teach Claude Code how to use Honcho locally
+2. **Commands** — install/export/import workflows
+3. **Scripts** — `to_wiki.py` and `wiki_to_honcho.py` for wiki round-tripping
 
-| Concept | Description |
-|---------|-------------|
-| **Workspaces** | Top-level containers for different applications/environments |
-| **Peers** | Any entity that persists but changes (users, agents, groups) |
-| **Sessions** | Interaction threads between peers |
-| **Messages** | Data units that trigger background reasoning |
+### Stack
 
-### Benefits for SAP AI Copilot
+| Component | Role | Where it runs |
+|-----------|------|---------------|
+| `honcho-ai` SDK | Python client, makes HTTP calls to Honcho server | Host (pip install) |
+| Honcho FastAPI server | REST API for memory storage/retrieval | Docker (`honcho-api-1`) |
+| Postgres + pgvector | Persistent storage | Docker (`honcho-database-1`) |
+| Redis | Caching layer | Docker (`honcho-redis-1`) |
+| Ollama + qwen3.5:9b | Local LLM for `peer.chat()` and dialectic | Host (ollama serve) |
 
-- **User preference tracking** across sessions
-- **Behavior pattern analysis** via reasoning
-- **Context-aware responses** with history
-- **Multi-agent coordination** support
+### Why Docker for the server?
+
+Honcho's server uses `fcntl` (POSIX-only) and cannot run natively on Windows. Docker builds and runs it in a Linux container transparently on all platforms.
 
 ---
 
-## Setup Instructions
+## Scripts
 
-### 1. Start Docker Desktop
+### `to_wiki.py`
 
-First, make sure Docker Desktop is running on Windows.
+Exports all peers and sessions from a Honcho workspace to markdown files.
 
-```powershell
-# Start Docker Desktop from Windows Start Menu
-# Or run: start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+**How it works:**
+- Iterates `honcho.peers()` (auto-paginating `SyncPage`)
+- Iterates `honcho.sessions()` (auto-paginating `SyncPage`)
+- For each session iterates `session.messages()` (auto-paginating)
+- Writes `wiki/peers/<id>.md`, `wiki/sessions/<id>.md`, `wiki/index.md`
+
+**Usage:**
+```bash
+python to_wiki.py --base-url http://localhost:8000 --workspace <id> --output wiki/
 ```
 
-### 2. Start Postgres with pgvector
+### `wiki_to_honcho.py`
+
+Imports peer and session markdown files back into Honcho.
+
+**How it works:**
+- Reads YAML frontmatter from each peer file → calls `honcho.peer(id, metadata={...})`
+- Reads YAML frontmatter + transcript section from each session file
+- Parses transcript (stateful line parser — `**Name**:` header followed by content lines)
+- Calls `peer.message(content)` for each line then `session.add_messages([...])`
+
+**Usage:**
+```bash
+python wiki_to_honcho.py --base-url http://localhost:8000 --workspace <id> --wiki wiki/
+```
+
+---
+
+## Transcript Format
+
+Export writes (and import expects) this format in session markdown:
+
+```markdown
+## Transcript
+
+### 2026-04-13 11:02
+
+**Alice**:
+
+Hey Bob, what is the capital of France?
+
+### 2026-04-13 11:02
+
+**Bob**:
+
+The capital of France is Paris.
+```
+
+The import parser is stateful: `### timestamp` resets current speaker, `**Name**:` sets current speaker, subsequent non-empty lines are accumulated as message content, flushed on the next speaker or `## ` section header.
+
+---
+
+## Known Limitations
+
+- **No `peer.chat()` without LLM** — basic storage/retrieval works without LLM config, but `peer.chat()`, `session.context()` and the deriver all require a working LLM endpoint. Set `DERIVER_ENABLED=false` etc. to run without LLM.
+- **Session IDs are user-managed** — Honcho uses get-or-create semantics; importing the same session twice appends messages rather than replacing them.
+- **`session_count` on peer pages** — counts sessions where the peer has messages; can be inflated if the same peer object is created multiple times via `honcho.peer()`.
+
+---
+
+## .env Minimal Config (Docker Compose)
 
 ```bash
-cd honcho-local
-docker compose up -d
+# Database — internal Docker network hostname
+DB_CONNECTION_URI=postgresql+psycopg://honcho:honcho_password@database:5432/honcho_dev
+
+# Ollama on the host machine
+LLM_OPENAI_COMPATIBLE_BASE_URL=http://host.docker.internal:11434/v1
+LLM_OPENAI_COMPATIBLE_API_KEY=sk-placeholder
+
+# Disable background LLM workers (not needed for storage/retrieval)
+EMBED_MESSAGES=false
+DERIVER_ENABLED=false
+SUMMARY_ENABLED=false
+DREAM_ENABLED=false
+AUTH_USE_AUTH=false
 ```
-
-This will start Postgres on port **5433** (not default 5432 to avoid conflicts).
-
-### 3. Configure API Keys
-
-Edit the `.env` file and add at least ONE of these:
-
-```bash
-# Edit this file with your actual API keys
-notepad .env
-```
-
-Required keys (at least one):
-- `LLM_ANTHROPIC_API_KEY` - For Claude models (recommended for reasoning)
-- `LLM_OPENAI_API_KEY` - For GPT models (for embeddings)
-- `LLM_GEMINI_API_KEY` - For Google Gemini (cost-effective reasoning)
-
-### 4. Install Additional Dependencies
-
-```bash
-pip install psycopg2-binary sqlalchemy alembic
-```
-
-### 5. Run Migrations
-
-Once Docker is running and API keys are configured:
-
-```bash
-cd honcho-local
-python run_migrations.py
-```
-
----
-
-## Quick Test
-
-Test your setup with the Python SDK:
-
-```python
-from honcho import Honcho
-import os
-
-# Load environment variables
-from dotenv import load_dotenv
-load_dotenv()
-
-# Initialize Honcho
-honcho = Honcho(workspace_id="sap-ai-copilot-test")
-
-# Create peers
-user = honcho.peer("test-user")
-agent = honcho.peer("sap-agent")
-
-# Create a session
-session = honcho.session("test-session-1")
-
-# Add messages
-session.add_messages([
-    user.message("Hello, I need help with a PO approval"),
-    agent.message("I can help with that. Which PO needs approval?")
-])
-
-# Get context
-context = session.context(summary=True)
-print(f"Context: {context}")
-
-# Chat with the peer
-response = user.chat("What is the user working on?")
-print(f"Response: {response}")
-```
-
----
-
-## Integration with PyTestSim
-
-To integrate Honcho with your existing PyTestSim testing framework:
-
-1. Add `honcho-ai` to `PyTestSim/requirements.txt`
-2. Create a new memory provider at `PyTestSim/src/base/honcho_memory.py`
-3. Hook into the existing `chat_history.json` storage
-
----
-
-## Docker Commands
-
-```bash
-# Start database
-docker compose up -d
-
-# Stop database
-docker compose down
-
-# View logs
-docker compose logs -f database
-
-# Connect to database
-docker exec -it honcho-postgres psql -U honcho -d honcho_dev
-```
-
----
-
-## Troubleshooting
-
-### Docker won't start
-- Make sure Docker Desktop is running
-- Check WSL2 is enabled: `wsl --list --verbose`
-
-### Connection errors
-- Check Postgres is running: `docker compose ps`
-- Verify port 5433 is not in use: `netstat -ano | findstr 5433`
-
-### API Key errors
-- Verify your key is set in `.env`
-- Try testing with a simple API call first
-
----
-
-## Next Steps
-
-1. Start Docker Desktop
-2. Add your API key to `.env`
-3. Run `docker compose up -d`
-4. Run migrations
-5. Test with Python script
-
----
-
-## Resources
-
-- [Honcho Documentation](https://docs.honcho.dev/v3)
-- [GitHub Repository](https://github.com/plastic-labs/honcho)
-- [Python SDK Reference](https://docs.honcho.dev/v3/documentation/sdk/python)

@@ -79,8 +79,8 @@ flowchart LR
 
 This installs:
 - **Ollama** (qwen3.5:9b model)
-- **Postgres + pgvector** (Docker)
-- **Honcho server** (official)
+- **Honcho full stack via Docker Compose** (FastAPI server + Postgres + Redis)
+- **Python dependencies** (`honcho-ai`, `pyyaml`)
 
 ## How It Works
 
@@ -119,6 +119,8 @@ response = user.chat("What does this user need?")
 /honcho-export
 ```
 
+Runs `to_wiki.py --base-url http://localhost:8000 --workspace <id>`.
+
 Creates `wiki/` folder with:
 - `peers/*.md` - User profiles
 - `sessions/*.md` - Conversation transcripts
@@ -131,6 +133,8 @@ View in **Obsidian** to see graph view and connections!
 ```
 /honcho-import
 ```
+
+Runs `wiki_to_honcho.py --base-url http://localhost:8000 --workspace <id> --wiki wiki/`.
 
 Imports existing documentation into Honcho for agent knowledge.
 
@@ -193,35 +197,51 @@ Imports existing documentation into Honcho for agent knowledge.
 curl -fsSL https://ollama.com/install.sh | sh
 ollama pull qwen3.5:9b
 ollama serve
-
-# Postgres with pgvector
-docker run -d \
-  --name honcho-postgres \
-  -e POSTGRES_PASSWORD=honcho123 \
-  -e POSTGRES_DB=honcho_db \
-  -p 5432:5432 \
-  pgvector/pgvector:pg16
 ```
 
-### Honcho Configuration
+> Postgres is managed by Honcho's Docker Compose — no separate container needed.
+
+### Honcho Server (Docker — required on Windows)
+
+> **Windows:** The Honcho server uses Linux-only system calls and **cannot run natively on Windows**. Use Docker on all platforms.
 
 ```bash
-# Clone and setup
 git clone https://github.com/plastic-labs/honcho.git
 cd honcho
 cp .env.template .env
+cp docker-compose.yml.example docker-compose.yml
+```
 
-# Edit .env with:
-DB_CONNECTION_URI=postgresql+psycopg://postgres:honcho123@localhost:5432/honcho_db
-LLM_OPENAI_API_BASE=http://localhost:11434/v1
-LLM_OPENAI_API_KEY=sk-placeholder
-EMBEDDING_PROVIDER=openai
-EMBEDDING_MODEL=qwen3-embedding:0.6b
+**Edit `.env` with these minimal settings:**
+```bash
+DB_CONNECTION_URI=postgresql+psycopg://honcho:honcho_password@database:5432/honcho_dev
+LLM_OPENAI_COMPATIBLE_BASE_URL=http://host.docker.internal:11434/v1
+LLM_OPENAI_COMPATIBLE_API_KEY=sk-placeholder
+EMBED_MESSAGES=false
+DERIVER_ENABLED=false
+SUMMARY_ENABLED=false
+DREAM_ENABLED=false
+AUTH_USE_AUTH=false
+```
 
-# Run
-pip install honcho-ai
-uv run alembic upgrade head
-uv run fastapi dev src/main.py
+**Start the stack (builds FastAPI server from source on first run):**
+```bash
+docker compose up -d --build
+```
+
+The server will start at `http://localhost:8000`.
+
+### Verify Setup
+
+```bash
+# Check Ollama
+curl http://localhost:11434/api/tags
+
+# Check all Honcho containers
+docker compose ps
+
+# Check Honcho server
+curl http://localhost:8000/health
 ```
 
 ## Wiki Format
@@ -250,6 +270,41 @@ name: Beyhan MEYRALI
 
 ## Communication Style
 Direct, technical, prefers concise answers
+```
+
+## Troubleshooting
+
+### "Ollama connection failed"
+```bash
+# Check Ollama is running
+curl http://localhost:11434/api/tags
+
+# Start Ollama
+ollama serve
+```
+
+### "Postgres connection failed"
+```bash
+# Check Docker containers
+docker compose ps
+
+# Check logs
+docker compose logs database
+
+# Restart if needed
+docker compose restart database
+```
+
+### "Module 'honcho' not found"
+```bash
+pip install honcho-ai
+```
+
+### Port 8000 already in use
+```bash
+# Edit docker-compose.yml and change the api port mapping
+# ports: - "127.0.0.1:8001:8000"
+# Then update base_url to http://localhost:8001
 ```
 
 ## Inspiration
