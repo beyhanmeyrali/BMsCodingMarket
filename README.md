@@ -90,8 +90,6 @@ flowchart TB
         WikiDir[Wiki Export<br/>wiki/ folder]
     end
 
-    Note: Wiki files can be viewed in Obsidian (a knowledge base app)
-
     Agent --> Skills
     Agent --> Cmds
     Cmd1 --> Lib
@@ -114,6 +112,8 @@ flowchart TB
     class Ollama ollama
     class Chat,Emb model
 ```
+
+> **Note:** Wiki exports can be viewed in [Obsidian](https://obsidian.md) (a knowledge base app with graph view and backlinking).
 
 ## Core Workflows
 
