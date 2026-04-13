@@ -70,10 +70,10 @@ flowchart TB
     end
 
     subgraph honcho_local_plugin["honcho-local Plugin"]
-        Cmd1[/honcho-install]
-        Cmd2[/honcho-check]
-        Cmd3[/honcho-to-wiki]
-        Cmd4[/wiki-to-honcho]
+        Cmd1["honcho-install cmd"]
+        Cmd2["honcho-check cmd"]
+        Cmd3["honcho-to-wiki cmd"]
+        Cmd4["wiki-to-honcho cmd"]
         Lib[local_honcho.py]
         WikiSkill[honcho-to-wiki Skill]
     end
@@ -89,6 +89,8 @@ flowchart TB
         Storage[JSON Storage<br/>honco_*.json]
         WikiDir[Wiki Export<br/>wiki/ folder]
     end
+
+    Note: Wiki files can be viewed in Obsidian (a knowledge base app)
 
     Agent --> Skills
     Agent --> Cmds
@@ -604,6 +606,27 @@ memory = get_local_honcho(
 - `honcho-local` - Agent memory and user interactions
 - `LLM Wiki` - Knowledge management and documentation
 - **Together** - Agents can export to wiki for human browsing
+
+## Components Explained
+
+ honcho-local integrates several powerful tools. Here's what each one does:
+
+| Component | What is it? | Why use it? |
+|-----------|-------------|-------------|
+| **Ollama** | Local LLM runner - runs AI models on your machine | No API costs, works offline, privacy-first |
+| **qwen3.5:9b** | Chat model with "thinking" capability | See the AI's reasoning process, faster responses |
+| **qwen3-embedding:0.6b** | Converts text to vector numbers | Enables semantic search - find related messages |
+| **Obsidian** | Knowledge base app for markdown files | Visualize connections, graph view, linked notes |
+| **Mermaid** | Diagrams in markdown using code | Architecture docs rendered automatically on GitHub |
+| **Honcho** | Memory library for AI agents | Track user behavior across sessions, detect patterns |
+| **LLM Wiki** | Pattern for persistent AI knowledge | Knowledge that compounds over time vs. re-processing |
+
+**How they work together:**
+1. **Ollama** runs the AI models locally on your machine
+2. **qwen3.5:9b** answers questions and shows its thinking
+3. **qwen3-embedding** converts messages to vectors for search
+4. **Obsidian** lets you browse the exported wiki with graph views
+5. **Mermaid** renders diagrams directly in the README on GitHub
 
 ## Requirements
 
