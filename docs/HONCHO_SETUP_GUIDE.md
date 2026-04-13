@@ -1,6 +1,8 @@
 # Honcho Setup Guide — Local, Fully Offline on Windows
 
-> **For agents:** This document is self-contained. Follow it top-to-bottom and you will have a working Honcho memory stack running locally with no cloud API keys.
+> **Just want cloud memory with no setup?** Install the official plugin: `/plugin marketplace add plastic-labs/claude-honcho` then `/plugin install honcho@honcho`. Get your key at [app.honcho.dev](https://app.honcho.dev). Done.
+>
+> **This guide is for running Honcho 100% locally** with Ollama and Docker on Windows — no API key, no internet required. It covers the required source patches, embedding model config, and the no-thinking model requirement that trips everyone up.
 
 ---
 

@@ -1,31 +1,3 @@
 {
-  "description": "Honcho memory hooks — stores each agent turn and compaction summaries to Honcho automatically",
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/on_agent_stop.py\"",
-            "async": true,
-            "timeout": 30,
-            "statusMessage": "Storing session to Honcho memory..."
-          }
-        ]
-      }
-    ],
-    "PostCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python \"${CLAUDE_PLUGIN_ROOT}/scripts/on_agent_stop.py\"",
-            "async": true,
-            "timeout": 30,
-            "statusMessage": "Storing compaction summary to Honcho memory..."
-          }
-        ]
-      }
-    ]
-  }
+  "description": "honcho-bridge: wiki export/import for Honcho. Install the official honcho plugin (plastic-labs/claude-honcho) for session memory hooks."
 }

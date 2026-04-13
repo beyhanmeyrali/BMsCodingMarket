@@ -1,196 +1,78 @@
 ---
 name: honcho-wiki
-description: Use when exporting Honcho agent memory to human-readable wiki format (Obsidian/Karpathy LLM Wiki pattern) or importing wiki documentation into Honcho. Enables bidirectional knowledge sync between AI agent memory and markdown documentation. Triggers: export honcho memory, import wiki to honcho, create knowledge base from agent conversations, make agent memory human-readable, obsidian integration for agent memory, llm wiki pattern for agents, bootstrap agent from documentation.
+description: Export Honcho memory to readable markdown and import it back. Use when you want to audit, edit, or back up what Honcho knows. Requires the official claude-honcho plugin (plastic-labs/claude-honcho) for memory collection — this skill only handles the wiki round-trip.
 ---
 
 # Honcho Wiki Bridge
 
-**Bidirectional sync between Honcho agent memory and markdown wiki (Karpathy LLM Wiki pattern).**
+Export Honcho memory to Obsidian-compatible markdown, edit it as plain text, import changes back.
 
-## Overview
+## Export
 
-The Honcho Wiki Bridge connects AI agent memory with human-readable documentation:
-
-```
-Honcho Memory (Postgres) ←→ Markdown Wiki (Obsidian)
-```
-
-| Direction | Command | Purpose |
-|-----------|---------|---------|
-| Honcho → Wiki | `to_wiki.py` | Export agent memory to markdown |
-| Wiki → Honcho | `wiki_to_honcho.py` | Import documentation to agent memory |
-
-## Why Use This?
-
-**Problem:** AI agent memory is locked in databases - humans can't read, edit, or verify it.
-
-**Solution:** Export to markdown for:
-- **Human oversight** - Verify what agents "know" about users
-- **Knowledge management** - Build documentation from conversations
-- **Editing** - Fix errors in agent memory using Obsidian
-- **Bootstrapping** - Import existing docs into agent memory
-
-## When to Use
-
-**Export (Honcho → Wiki):**
-- Agent has learned important user preferences
-- Want to review what agent knows
-- Building knowledge base from conversations
-- Need to edit/correct agent memory
-
-**Import (Wiki → Honcho):**
-- Have existing documentation to teach agent
-- Manually edited wiki and want to update agent
-- Bootstrapping new agent with domain knowledge
-
-## Export Format
-
-```
-wiki/
-├── index.md              # Catalog
-├── log.md                # Export log
-├── peers/
-│   ├── user_123.md       # User profiles
-│   └── agent.md          # Agent profiles
-└── sessions/
-    ├── session-1.md      # Conversation transcripts
-    └── session-2.md
+```bash
+python plugins/honcho-bridge/scripts/to_wiki.py \
+  --base-url http://localhost:8000 \
+  --workspace <workspace-id> \
+  --output wiki/
 ```
 
-### Peer Page Example
+Produces `wiki/peers/*.md` and `wiki/sessions/*.md`. Open in Obsidian to see graph view with peer ↔ session links.
+
+## Import
+
+```bash
+python plugins/honcho-bridge/scripts/wiki_to_honcho.py \
+  --base-url http://localhost:8000 \
+  --workspace <workspace-id> \
+  --wiki wiki/
+```
+
+Reads YAML frontmatter for peer identity and `## Transcript` sections for messages.
+
+## Peer page format
 
 ```markdown
 ---
-peer_id: user_123
-name: Beyhan MEYRALI
+peer_id: alice
+name: Alice
 peer_type: user
-created_at: 2024-01-01T00:00:00
-workspace: my-agent
 ---
 
-# Beyhan MEYRALI
-
-**Type:** User
-**Created:** 2024-01-01
-**Sessions:** 5
-
-## Profile
-
-### Communication Style
-Direct, technical, prefers concise answers
-
-### Interests
-- Local LLMs (Ollama)
-- Python development
-- AI agent architecture
-- Knowledge management systems
-
-### Frequent Topics
-- Ollama setup
-- Honcho memory integration
-- Wiki export patterns
-
-## Sessions
-- [[session-1]] - Initial setup discussion
-- [[session-2]] - Wiki export design
+# Alice
 ```
 
-### Session Page Example
+## Session page format
 
 ```markdown
 ---
-session_id: session-1
-title: Conversation - Initial Setup
-created_at: 2024-01-01T00:00:00
-workspace: my-agent
-participants: [user_123, agent]
+session_id: session-001
+participants: [alice, bob]
 ---
-
-# Conversation - Initial Setup
-
-## Summary
-
-Discussion about setting up Honcho with Ollama for local AI agent memory.
-
-## Participants
-
-- **Beyhan MEYRALI** (user) - [[user_123]]
-- **Assistant** (agent) - [[agent]]
 
 ## Transcript
 
-### 2024-01-01 10:00
-**Beyhan MEYRALI** (user):
-How do I set up Honcho with Ollama?
+### 2026-04-13 11:02
 
-**Assistant** (agent):
-First install Ollama, then configure Honcho to use the OpenAI-compatible endpoint at http://localhost:11434/v1
+**Alice**:
 
-## Topics
+What should we build next?
 
-- Ollama
-- Setup
-- Configuration
+### 2026-04-13 11:03
+
+**Bob**:
+
+Let's add wiki export.
 ```
 
-## Import Format
+## When to use this
 
-Wiki files must have YAML frontmatter:
+- Verify what Honcho actually extracted from your conversations
+- Correct a wrong observation by editing the markdown and re-importing
+- Bootstrap a new workspace from existing documentation
+- Back up memory before wiping a workspace
 
-```yaml
----
-peer_id: user_123
-name: Beyhan MEYRALI
-peer_type: user
----
-```
+## Prerequisites
 
-Required fields:
-- `peer_id` or `session_id`
-- `name` (for peers) or `title` (for sessions)
-
-## Quick Reference
-
-### Export to Wiki
-
-```python
-from honcho import Honcho
-from honcho_bridge.scripts.to_wiki import export_to_wiki
-
-honcho = Honcho(workspace_id="my-agent")
-export_to_wiki(honcho, output_dir="wiki/")
-```
-
-### Import from Wiki
-
-```python
-from honcho import Honcho
-from honcho_bridge.scripts.wiki_to_honcho import import_from_wiki
-
-honcho = Honcho(workspace_id="imported")
-import_from_wiki(wiki_dir="wiki/", honcho=honcho)
-```
-
-## Integration with Official Honcho
-
-This bridge works with **official Honcho** (https://github.com/plastic-labs/honcho):
-
-1. Install official Honcho with Ollama
-2. Run `/honcho-install` command
-3. Export memory with `/honcho-export`
-4. Edit in Obsidian
-5. Import back with `/honcho-import`
-
-## The Karpathy Connection
-
-Based on [Andrej Karpathy's LLM Wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f):
-
-> "Knowledge should compound over time, not be re-derived every query"
-
-This bridge extends the pattern to AI agents:
-- **Karpathy**: Personal knowledge base
-- **This bridge**: Agent memory + human knowledge base
-
-## License
-
-MIT License - Beyhan MEYRALI
+- Official Honcho plugin installed: `plastic-labs/claude-honcho`
+- `pip install honcho-ai pyyaml`
+- Honcho server running (cloud via [app.honcho.dev](https://app.honcho.dev), or local — see `docs/HONCHO_SETUP_GUIDE.md`)
