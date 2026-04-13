@@ -47,12 +47,6 @@ graph LR
         H3["Session 3"] --> OBS
         OBS --> OBS2["Observations\n(grows richer)"]
     end
-
-    style S1 fill:#f9f,stroke:#333,stroke-width:1px
-    style S2 fill:#f9f,stroke:#333,stroke-width:1px
-    style S3 fill:#f9f,stroke:#333,stroke-width:1px
-    style OBS fill:#bbf,stroke:#333,stroke-width:2px
-    style OBS2 fill:#bbf,stroke:#333,stroke-width:2px
 ```
 
 ### Core Concepts
@@ -80,10 +74,6 @@ graph TD
     S1 -.-> O1
     S1 -.-> O2
     S2 -.-> O3
-
-    style O1 fill:#bbf,stroke:#333,stroke-width:1px
-    style O2 fill:#bbf,stroke:#333,stroke-width:1px
-    style O3 fill:#bbf,stroke:#333,stroke-width:1px
 ```
 
 ### How the Deriver Works
@@ -189,16 +179,16 @@ An agent can be its own peer. It stores observations about its own behaviour, mi
 
 ```mermaid
 graph LR
-    subgraph Roles
-        Dev["Developer / Agent"]
-        Deriver["Deriver"]
-        User["End User"]
-        Admin["Admin"]
+    subgraph Roles["Roles"]
+        Dev["Developer / Agent\n- writes messages\n- calls peer.chat"]
+        Deriver["Deriver\n- background worker\n- extracts observations"]
+        User["End User\n- represented as Peer"]
+        Admin["Admin\n- exports with to_wiki.py"]
     end
 
-    subgraph Honcho
+    subgraph Honcho["Honcho System"]
         API["Honcho API"]
-        DB["Postgres"]
+        DB["Postgres + pgvector"]
         Worker["Deriver Worker"]
     end
 
@@ -208,14 +198,6 @@ graph LR
     Admin --> API
     API --> DB
     User -.-> DB
-
-    noteDev[writes messages and queries]
-    noteAdmin[exports with to_wiki.py]
-    noteUser[represented as Peer]
-
-    Dev -.-> noteDev
-    Admin -.-> noteAdmin
-    User -.-> noteUser
 ```
 
 | Role | Interaction with Honcho |
