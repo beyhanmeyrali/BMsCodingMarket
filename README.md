@@ -1,172 +1,61 @@
-# honcho-local
+# Honcho Bridge for Claude Code
 
-> **Local-first memory and reasoning for AI agents using Ollama - no Docker, no API keys, no cloud.**
+> **Claude Code plugin for using official Honcho memory system locally with Ollama - no API keys, fully offline.**
 
-## What is honcho-local?
+## What is Honcho Bridge?
 
-**honcho-local** is a local-first alternative to the [official Honcho](https://github.com/plastic-labs/honcho) cloud service. It provides the same core concepts (peers, sessions, memory, reasoning) but runs entirely on your machine using Ollama.
+**Honcho Bridge** helps Claude Code use the official [Honcho](https://github.com/plastic-labs/honcho) memory system with local Ollama models.
 
-| Aspect | Official Honcho | honcho-local |
-|--------|----------------|--------------|
-| **Installation** | Docker + Postgres + migrations | Ollama only |
-| **API Keys** | Required (Anthropic/OpenAI) | Not required |
-| **Connectivity** | Requires internet | Works offline |
-| **Storage** | Postgres database | JSON files (optional Postgres) |
-| **LLM** | Cloud APIs | Local Ollama models |
-| **Cost** | Pay per API call | Free (after model download) |
+**The Problem:** Official Honcho plugin exists but doesn't guide Claude Code on local setup with Ollama + Docker Postgres.
 
-## Quick Overview Diagram
+**The Solution:** This plugin provides:
+1. **Clear guidance** for Claude Code on using Honcho locally
+2. **Wiki bridge skills** - Export/import memory to markdown (Karpathy LLM Wiki pattern)
+3. **100% local** - No API keys, works offline
+
+## Quick Overview
 
 ```mermaid
 flowchart LR
-    subgraph User
-        Dev[Developer]
+    subgraph Claude_Code
         Agent[AI Agent]
     end
 
-    subgraph honcho_local
-        Memory[Memory Storage]
-        Reason[LLM Reasoning]
-        Search[Semantic Search]
+    subgraph Honcho_Bridge
+        Guide[Skills: How to use Honcho locally]
+        Export[/honcho-export]
+        Import[/honcho-import]
     end
 
-    subgraph Outputs
-        Wiki[LLM Wiki Export]
-        Query[Natural Language]
+    subgraph Local_Stack
+        Honcho[Honcho Server]
+        Postgres[Postgres + pgvector]
+        Ollama[Ollama - qwen3.5:9b]
     end
 
-    Dev -->|/honcho-install| Agent
-    Agent -->|Add messages| Memory
-    Memory -->|Export to markdown| Wiki
-    Memory -->|Ask questions| Query
-    Query -->|Reasoning trace| Agent
+    Agent -->|Reads skills| Guide
+    Agent -->|Exports memory| Export
+    Agent -->|Imports knowledge| Import
+    Guide -->|Configures| Honcho
+    Honcho -->|Stores in| Postgres
+    Honcho -->|Queries| Ollama
 
-    style Memory fill:#e3f2fd
-    style Wiki fill:#f3e5f5
+    style Guide fill:#e1f5fe
+    style Export fill:#f3e5f5
+    style Import fill:#f3e5f5
 ```
 
 ## Features
 
 | Feature | Description |
 |---------|-------------|
-| **Peer Paradigm** | Treat users and agents symmetrically as "peers" |
-| **Session Management** | Isolated conversation threads with full history |
-| **Natural Language Queries** | Ask "What does this user typically want?" |
-| **Thinking Mode** | See model's reasoning trace (qwen3.5:9b) |
-| **Semantic Search** | Vector embeddings for finding similar messages |
-| **Cached Representations** | User profiles that compound over time |
-| **Wiki Export** | Export to markdown for browsing in Obsidian |
-| **Wiki Import** | Learn from existing wiki documentation |
-| **100% Local** | No cloud APIs, no API keys, works offline |
+| **Local Honcho Guide** | Skills that teach Claude Code how to use Honcho with Ollama |
+| **Wiki Export** | Export agent memory to Obsidian-compatible markdown |
+| **Wiki Import** | Import documentation into agent memory |
+| **100% Local** | No API keys, works offline |
+| **Postgres + pgvector** | Vector search for semantic memory retrieval |
 
-## Architecture
-
-```mermaid
-flowchart TB
-    subgraph Claude_Code
-        Agent[AI Agent]
-        Skills[Skills]
-        Cmds[Commands]
-    end
-
-    subgraph honcho_local_plugin["honcho-local Plugin"]
-        Cmd1["honcho-install cmd"]
-        Cmd2["honcho-check cmd"]
-        Cmd3["honcho-to-wiki cmd"]
-        Cmd4["wiki-to-honcho cmd"]
-        Lib[local_honcho.py]
-        WikiSkill[honcho-to-wiki Skill]
-    end
-
-    subgraph Local_Machine
-        Ollama[Ollama Server<br/>localhost:11434]
-
-        subgraph Models
-            Chat[qwen3.5:9b<br/>Chat + Thinking]
-            Emb[qwen3-embedding:0.6b<br/>Semantic Search]
-        end
-
-        Storage[JSON Storage<br/>honco_*.json]
-        WikiDir[Wiki Export<br/>wiki/ folder]
-    end
-
-    Agent --> Skills
-    Agent --> Cmds
-    Cmd1 --> Lib
-    Cmd2 --> Lib
-    Cmd3 --> Lib
-    Cmd4 --> Lib
-
-    Lib --> Ollama
-    Ollama --> Chat
-    Ollama --> Emb
-
-    Lib --> Storage
-    Lib <-->|Bidirectional| WikiDir
-
-    classDef local fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef ollama fill:#fce4ec,stroke:#880e4f,stroke-width:2px
-    classDef model fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-
-    class Lib,Storage,WikiDir local
-    class Ollama ollama
-    class Chat,Emb model
-```
-
-> **Note:** Wiki exports can be viewed in [Obsidian](https://obsidian.md) (a knowledge base app with graph view and backlinking).
-
-## Core Workflows
-
-### Workflow 1: Store and Query Memory
-
-```mermaid
-sequenceDiagram
-    participant Agent as AI Agent
-    participant Honcho as honcho-local
-    participant Ollama as Ollama
-
-    Agent->>Honcho: Add message("I need help with PO")
-    Honcho->>Storage: Save to JSON
-    Agent->>Honcho: What does user want?
-    Honcho->>Ollama: Chat with context
-    Ollama-->>Agent: "User needs PO help"
-    Agent->>Honcho: Get representation
-    Honcho-->>Agent: Profile with interests
-```
-
-### Workflow 2: Export to Wiki
-
-```mermaid
-flowchart LR
-    A[honcho JSON] -->|Export| B[Markdown Files]
-    B --> C[Peers Directory]
-    B --> D[Sessions Directory]
-    B --> E[index.md]
-    B --> F[log.md]
-    C --> G[Obsidian]
-    D --> G
-
-    style A fill:#fce4ec
-    style B fill:#f3e5f5
-    style G fill:#e1f5fe
-```
-
-### Workflow 3: Import from Wiki
-
-```mermaid
-flowchart LR
-    A[Obsidian Vault] -->|Import| B[Markdown Files]
-    B --> C[Parse Frontmatter]
-    C --> D[honcho JSON]
-    D --> E[Agent Memory]
-
-    style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style D fill:#fce4ec
-    style E fill:#e3f2fd
-```
-
-## Quick Start
+## Installation
 
 ### One-Time Setup (Run in Claude Code)
 
@@ -176,587 +65,198 @@ flowchart LR
 /plugin marketplace add beyhanmeyrali/BMsCodingMarket
 ```
 
-**If authentication fails**, clone manually first:
-```bash
-git clone https://github.com/beyhanmeyrali/BMsCodingMarket.git ~/claude-marketplaces/bms
-```
-Then add the local path:
-```
-/plugin marketplace add ~/claude-marketplaces/bms
-```
-
 #### 2. Install the Plugin
 
 ```
-/plugin install honcho-local@bms-marketplace
+/plugin install honcho-bridge@bms-marketplace
 ```
 
-#### 3. Install Ollama and Models
+#### 3. Install Dependencies
 
 ```
 /honcho-install
 ```
 
-This automatically:
-- Downloads `qwen3.5:9b` model (~6GB)
-- Downloads `qwen3-embedding:0.6b` model (~600MB)
-- Installs Python dependencies
+This installs:
+- **Ollama** (qwen3.5:9b model)
+- **Postgres + pgvector** (Docker)
+- **Honcho server** (official)
 
-#### 4. Verify Installation
+## How It Works
 
-```
-/honcho-check
-/plugin list                           # Should show honcho-local
-/plugin info honcho-local              # Shows description, version
-```
+### 1. Agent Uses Honcho Memory
 
-### Keeping It Up to Date
-
-```
-/plugin marketplace update                              # Refresh marketplace
-/plugin update honcho-local@bms-marketplace            # Update plugin
-```
-
-### 3. Use in Your Code
+When your agent needs memory, Claude Code reads the `use-honcho-locally` skill which provides:
 
 ```python
-import sys
-sys.path.insert(0, "plugins/honcho-local/scripts")
-from local_honcho import get_local_honcho
+from honcho import Honcho
 
-# Initialize with thinking mode
-memory = get_local_honcho(
+# Initialize with local server
+honcho = Honcho(
     workspace_id="my-agent",
-    model="qwen3.5:9b",
-    think=True,
+    base_url="http://localhost:8000"
 )
 
-# Create peers
-user = memory.peer("user-123", name="Alice")
-agent = memory.peer("bot", peer_type="agent")
+# Create peers (users and agents are both "peers")
+user = honcho.peer("user-123")
+agent = honcho.peer("assistant")
 
 # Add conversation
-session = memory.session("conv-1")
+session = honcho.session("conv-1")
 session.add_messages([
-    {"role": "user", "content": "I need PO approval help", "metadata": {"peer_id": user.id}},
-    {"role": "assistant", "content": "I can help with that", "metadata": {"peer_id": agent.id}},
+    user.message("I need help with Python"),
+    agent.message("I can help with that"),
 ])
 
-# Get insights with reasoning trace
-result = memory.chat(user.id, "What does this user need?", include_thinking=True)
-print(result["thinking"])  # Model's internal reasoning
-print(result["content"])   # Final answer
-
-# Semantic search
-results = memory.search(user.id, "PO approval", limit=5)
+# Query user behavior
+response = user.chat("What does this user need?")
+# Returns: "The user is learning Python programming"
 ```
 
-### 4. Export to Wiki
+### 2. Export Memory to Wiki
 
 ```
-/honcho-to-wiki
+/honcho-export
 ```
 
 Creates `wiki/` folder with:
-- `peers/*.md` - Entity pages for each user/agent
-- `sessions/*.md` - Conversation logs
-- `index.md` - Catalog of all pages
-- `log.md` - Export log
+- `peers/*.md` - User profiles
+- `sessions/*.md` - Conversation transcripts
+- `index.md` - Catalog
 
-Open `wiki/` in Obsidian to browse your agent's memory!
+View in **Obsidian** to see graph view and connections!
 
-### 5. Import from Wiki
+### 3. Import Wiki to Memory
 
 ```
-/wiki-to-honcho
+/honcho-import
 ```
 
-Imports existing wiki markdown into honcho memory:
-- Parses YAML frontmatter
-- Extracts transcripts
-- Builds honcho JSON storage
+Imports existing documentation into Honcho for agent knowledge.
 
-## Commands Reference
+## Why Wiki Bridge?
+
+**Problem:** Agent memory is locked in databases - humans can't read or edit it.
+
+**Solution:** Export to markdown so you can:
+- **Verify** what your agent "knows"
+- **Edit** incorrect memories
+- **Build** knowledge bases from conversations
+- **Bootstrap** agents from existing docs
+
+## Architecture
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│ Claude Code │────▶│   Honcho    │────▶│  Postgres   │
+│   Agent     │     │   (FastAPI) │     │  + pgvector │
+└─────────────┘     └─────────────┘     └─────────────┘
+       │                    │
+       │                    ▼
+       │             ┌─────────────┐
+       │             │   Ollama    │
+       └────────────▶│  (qwen3.5)  │
+         Wiki sync   └─────────────┘
+```
+
+## Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `use-honcho-locally` | Guides Claude Code on using Honcho with Ollama |
+| `honcho-wiki` | Wiki export/import (Karpathy LLM Wiki pattern) |
+
+## Commands
 
 | Command | Purpose |
 |---------|---------|
-| `/honcho-install` | Install Ollama and required models |
-| `/honcho-check` | Verify installation and setup |
-| `/honcho-to-wiki` | Export honcho memory to wiki markdown |
-| `/wiki-to-honcho` | Import wiki markdown into honcho memory |
+| `/honcho-install` | Install Honcho + Ollama + Postgres |
+| `/honcho-export` | Export memory to wiki markdown |
+| `/honcho-import` | Import wiki to Honcho memory |
 
-## Data Storage
+## Comparison
 
-### Where Data Lives
+| Aspect | Official Honcho | This Plugin |
+|--------|----------------|-------------|
+| **Core library** | ✅ Official Honcho | ✅ Uses official Honcho |
+| **LLM** | OpenAI/Anthropic (API keys) | **Ollama (local)** |
+| **Setup guidance** | ❌ Assumes cloud | ✅ **Local setup instructions** |
+| **Wiki export** | ❌ Not included | ✅ **Karpathy wiki pattern** |
+| **License** | AGPL-3.0 | MIT (bridge code) |
 
-```
-your-project/
-├── honcho_data/           ← All honcho storage (gitignored)
-│   ├── honco_my-agent.json
-│   └── honco_other-workspace.json
-├── main.py
-└── ...
-```
+## Local Setup Details
 
-**Storage location**: `honcho_data/` folder (auto-created, added to `.gitignore`)
+### Prerequisites
 
-**One JSON file per workspace** - Named `honco_{workspace_id}.json`
-
-### Data Structure
-
-```json
-{
-  "peers": {
-    "workspace:user123": {
-      "id": "user123",
-      "name": "Alice",
-      "peer_type": "user",
-      "created_at": "2026-04-13T..."
-    }
-  },
-  "sessions": {},
-  "messages": {
-    "workspace:conv-1": [
-      {
-        "id": "uuid",
-        "role": "user",
-        "content": "Hello",
-        "timestamp": "2026-04-13T...",
-        "metadata": {"peer_id": "user123"}
-      }
-    ]
-  },
-  "representations": {
-    "workspace:user123:all": {
-      "interests": ["topic1", "topic2"],
-      "communication_style": "direct",
-      "sentiment": "positive"
-    }
-  }
-}
-```
-
-### How It Works
-
-```mermaid
-flowchart LR
-    A[Agent adds message] --> B[Stored in messages array]
-    B --> C[Saved to honco_*.json]
-    C --> D[Query: chat user_id]
-    D --> E[Loads conversation history]
-    E --> F[Sends to Ollama with context]
-    F --> G[Returns insights about user]
-    G --> H[get_representation called]
-    H --> I[Generates user profile]
-    I --> J[Cached in representations]
-    J --> K[Saved to JSON]
-
-    style A fill:#e3f2fd
-    style K fill:#e3f2fd
-    style F fill:#fce4ec
-    style I fill:#f3e5f5
-```
-
-### Knowledge Compounding
-
-Unlike RAG which re-processes documents every query, honcho-local **caches insights**:
-
-```python
-# First interaction: LLM analyzes conversation
-profile = memory.get_representation("user-123")
-# Returns: {"interests": [...], "style": "direct", "sentiment": "neutral"}
-
-# Subsequent interactions: Reads cached profile
-profile = memory.get_representation("user-123")
-# Returns cached result immediately (no LLM call)
-```
-
-The representation cache updates with new information, so insights **compound over time**.
-
-## Performance
-
-### Benchmark Results
-
-Tested on:
-- **GPU**: NVIDIA GeForce RTX 5060 Laptop GPU (8GB VRAM)
-- **CPU**: AMD Ryzen AI 9 365 (10 cores, 20 threads)
-- **RAM**: 32 GB
-- **Ollama**: qwen3.5:9b (chat), qwen3-embedding:0.6b (search)
-
-| Operation | Metric | Result |
-|-----------|--------|--------|
-| **Write** | Throughput | ~200 msg/s |
-| **Write** | Latency | ~5ms per message |
-| **Read** | Latency | ~8μs per context |
-| **Chat** | LLM Reasoning | ~35s per query |
-| **Search** | Semantic Search | ~6s per query |
-| **Search** | Relevance | 100% accuracy |
-| **Profile** | User Representation | ~120s (first time) |
-
-**Notes:**
-- Write/Read: JSON storage is very fast
-- Chat/Profile: LLM推理 depends on model size (qwen3.5:9b)
-- Search: Includes embedding generation + similarity calculation
-- Profile: First run is slow, subsequent reads use cache
-
-Run your own benchmark:
 ```bash
-cd tests && python benchmark.py
+# Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull qwen3.5:9b
+ollama serve
+
+# Postgres with pgvector
+docker run -d \
+  --name honcho-postgres \
+  -e POSTGRES_PASSWORD=honcho123 \
+  -e POSTGRES_DB=honcho_db \
+  -p 5432:5432 \
+  pgvector/pgvector:pg16
 ```
 
-## Wiki Integration
+### Honcho Configuration
 
-### honcho ↔ Wiki Bridge
+```bash
+# Clone and setup
+git clone https://github.com/plastic-labs/honcho.git
+cd honcho
+cp .env.template .env
 
-```mermaid
-flowchart LR
-    subgraph honcho_local
-        H1[JSON Storage]
-        H2[Memory API]
-    end
+# Edit .env with:
+DB_CONNECTION_URI=postgresql+psycopg://postgres:honcho123@localhost:5432/honcho_db
+LLM_OPENAI_API_BASE=http://localhost:11434/v1
+LLM_OPENAI_API_KEY=sk-placeholder
+EMBEDDING_PROVIDER=openai
+EMBEDDING_MODEL=qwen3-embedding:0.6b
 
-    subgraph wiki_export
-        W1[Markdown Files]
-        W2[Obsidian Viewer]
-        W3[Graph View]
-    end
-
-    H2 -->|Export| W1
-    W1 --> W2
-    W2 --> W3
-    W3 -->|Visualize connections| W1
-
-    H1 -.->|Import new knowledge| H2
-
-    style H1 fill:#fce4ec
-    style W1 fill:#f3e5f5
-    style W2 fill:#e1f5fe
+# Run
+pip install honcho-ai
+uv run alembic upgrade head
+uv run fastapi dev src/main.py
 ```
 
-### Export Format
+## Wiki Format
 
 ```
 wiki/
-├── index.md              # Catalog of all pages
-├── log.md                 # Export log
+├── index.md              # Catalog
 ├── peers/
-│   ├── user_123.md       # User profile
-│   └── agent.md           # Agent profile
+│   └── user_123.md       # User profile
 └── sessions/
-    ├── conv-1.md          # Conversation log
-    └── conv-2.md
+    └── session-1.md      # Conversation
 ```
 
-### Wiki Page Format
+### Peer Page
 
-**Peer pages** include:
-- YAML frontmatter with metadata
-- Interests and communication style
-- Links to participated sessions
+```markdown
+---
+peer_id: user_123
+name: Beyhan MEYRALI
+---
 
-**Session pages** include:
-- Full conversation transcript
-- Participant information
-- Auto-generated topics
+# Beyhan MEYRALI
 
-## Components
+## Interests
+- Ollama, Python, AI agents
 
-```
-honcho-local/
-├── commands/
-│   ├── install.md      # /honcho-install - Setup Ollama
-│   ├── check.md        # /honcho-check - Verify setup
-│   ├── to-wiki.md       # /honcho-to-wiki - Export to markdown
-│   └── from-wiki.md    # /wiki-to-honcho - Import from markdown
-├── scripts/
-│   ├── local_honcho.py # Core library
-│   ├── setup.py        # Installation script
-│   ├── check.py        # Verification script
-│   ├── to_wiki.py      # Export to wiki
-│   └── wiki_to_honcho.py # Import from wiki
-├── skills/
-│   ├── honcho-local/   # Main honcho skill
-│   │   └── SKILL.md
-│   └── honcho-to-wiki/  # Wiki conversion skill
-│       └── SKILL.md
-├── hooks/
-│   └── hooks.json      # Session hooks
-└── requirements.txt    # Python dependencies
+## Communication Style
+Direct, technical, prefers concise answers
 ```
 
-## Core Classes
-
-| Class | Purpose |
-|-------|---------|
-| `LocalHoncho` | Main memory provider, manages workspaces |
-| `Session` | Conversation thread with message history |
-| `Peer` | User or agent representation |
-| `Message` | Individual message with metadata |
-
-## Key Methods
-
-```python
-# Factory function
-memory = get_local_honcho(workspace_id="my-app")
-
-# Peer management
-user = memory.peer("user-id", name="User", peer_type="user")
-agent = memory.peer("agent-id", name="Agent", peer_type="agent")
-
-# Session management
-session = memory.session("conversation-id")
-session.add_messages([...])
-
-# Query with thinking
-result = memory.chat(peer_id, "What patterns exist?", include_thinking=True)
-# Returns: {"thinking": "...", "content": "..."}
-
-# Get profile (cached, compounds over time)
-profile = memory.get_representation(peer_id)
-# Returns: {"interests": [...], "communication_style": "...", ...}
-
-# Semantic search
-results = memory.search(peer_id, "query", limit=5)
-# Returns: [{"content": "...", "score": 0.95}, ...]
-```
-
-## Thinking Mode
-
-Enable thinking mode to see the model's reasoning process:
-
-```python
-memory = get_local_honcho(
-    workspace_id="my-agent",
-    think=True,  # or "low", "medium", "high" for GPT-OSS
-)
-
-# All major methods support include_thinking
-memory.chat(user_id, question, include_thinking=True)
-memory.get_representation(user_id, include_thinking=True)
-session.get_context(summary=True, include_thinking=True)
-```
-
-**Supported models:**
-- `qwen3.5:9b` - Recommended (fast with thinking)
-- `qwen3:8b` - Smaller alternative
-- `deepseek-r1` - DeepSeek's reasoning model
-- `gpt-oss` - With `think="low"|"medium"|"high"`
-
-## Storage Options
-
-### JSON (Default) - Simple & Portable
-
-```python
-memory = get_local_honcho(workspace_id="my-app")
-# Creates: honco_my-app.json in current directory
-```
-
-**Best for:** Development, testing, single-machine deployments
-
-### Custom Path
-
-```python
-memory = LocalHoncho(
-    workspace_id="my-app",
-    db_path="/absolute/path/to/memory.json",
-)
-```
-
-### Postgres (Optional) - Production Ready
-
-```python
-memory = get_local_honcho(
-    workspace_id="my-app",
-    use_postgres=True,
-    postgres_uri="postgresql://user:pass@localhost/db",
-)
-```
-
-**Best for:** Production, multiple processes, better performance
-
-## Multi-Agent Knowledge Sharing
-
-### The Problem with JSON-Only Storage
-
-With JSON storage, each project's knowledge is **isolated**:
-
-```
-project-a/
-└── honco_project-a.json    # Only knows about Project A
-
-project-b/
-└── honco_project-b.json    # Only knows about Project B
-```
-
-**Agent A** in Project A cannot learn from **Agent B** in Project B. Knowledge is siloed.
-
-### Solution: Shared Postgres Database
-
-With Postgres, all agents share the same knowledge base:
-
-```python
-# Project A's agent
-memory_a = get_local_honcho(
-    workspace_id="project-a",
-    use_postgres=True,
-    postgres_uri="postgresql://user:pass@localhost/honco_shared"
-)
-
-# Project B's agent
-memory_b = get_local_honcho(
-    workspace_id="project-b",
-    use_postgres=True,
-    postgres_uri="postgresql://user:pass@localhost/honco_shared"  # SAME DB!
-)
-
-# Now agents can share knowledge!
-# Both workspaces stored in same database
-```
-
-### Setup Postgres for Multi-Agent Sharing
-
-**Option 1: Docker (Recommended)**
-
-```bash
-docker run -d \
-  --name honco-postgres \
-  -e POSTGRES_PASSWORD=honco123 \
-  -e POSTGRES_DB=honco_shared \
-  -p 5432:5432 \
-  postgres:16
-```
-
-**Option 2: Local Installation**
-
-```bash
-# Ubuntu/Debian
-sudo apt install postgresql postgresql-contrib
-sudo -u postgres createdb honco_shared
-
-# macOS
-brew install postgresql
-brew services start postgresql
-createdb honco_shared
-
-# Windows
-# Download from https://www.postgresql.org/download/windows/
-```
-
-### JSON vs Postgres: What Do You Lose?
-
-| Feature | JSON Storage | Postgres Storage |
-|---------|--------------|------------------|
-| **Setup complexity** | ✅ Zero config | ❌ Requires database |
-| **Portability** | ✅ Copy file, move anywhere | ❌ Need database dump/restore |
-| **Cross-project sharing** | ❌ **Each project isolated** | ✅ **All agents share knowledge** |
-| **Multi-agent concurrent access** | ❌ Single agent per file | ✅ **Many agents read/write together** |
-| **Organizational memory** | ❌ Siloed per project | ✅ **Centralized knowledge repository** |
-| **Performance at scale** | ❌ Full file scan | ✅ **Indexed queries** |
-| **Data integrity** | ❌ Race conditions possible | ✅ **ACID guarantees** |
-| **Vector search** | ⚠️ In-memory, lost on restart | ✅ **Persistent with pgvector** |
-
-### When to Use Each
-
-| Scenario | Recommended | Why |
-|----------|-------------|-----|
-| Single developer, one project | **JSON** | Simple, portable |
-| Testing and development | **JSON** | Easy to reset, inspect |
-| Multi-agent organization | **Postgres** | Shared knowledge base |
-| Production with multiple users | **Postgres** | Concurrent access, reliability |
-| Large-scale deployments (100K+ messages) | **Postgres** | Performance, indexing |
-
-### Centralized Knowledge Example
-
-With Postgres, you can query across all workspaces:
-
-```python
-# Agent A learns about user preferences
-memory_a = get_local_honcho(workspace_id="support-bot", use_postgres=True, postgres_uri="...")
-memory_a.chat("user-123", "What does this user prefer?")
-
-# Agent B benefits from that knowledge!
-memory_b = get_local_honcho(workspace_id="sales-bot", use_postgres=True, postgres_uri="...")
-# Can access the same user representation, no need to re-learn
-```
-
-**This is the key difference**: JSON = isolated knowledge, Postgres = organizational memory.
-
-## Comparisons
-
-### vs Official Honcho
-
-| Feature | Official Honcho | honcho-local |
-|---------|----------------|--------------|
-| **Setup** | Docker Compose + Postgres | Ollama only |
-| **Installation** | Multiple steps, migrations | One command: `/honcho-install` |
-| **API Keys** | Required | Not required |
-| **Internet** | Required for API calls | Only for model download |
-| **Thinking** | Via cloud LLMs | Via local models |
-| **Cost** | Per-API-call pricing | Free (hardware cost only) |
-| **Privacy** | Data sent to cloud | 100% local |
-
-### vs Karpathy's LLM Wiki
-
-| Aspect | LLM Wiki | honcho-local |
-|--------|----------|--------------|
-| **Storage** | Markdown files in directory tree | Single JSON file per workspace |
-| **Purpose** | Personal knowledge bases | AI agent memory |
-| **Content** | Structured wiki pages | Conversational data |
-| **Writer** | LLM writes markdown | LLM queries conversations |
-| **Reader** | Human reads in Obsidian | Agent queries via API |
-| **Growth** | Wiki pages link together | Cached representations |
-| **Best for** | Research, note-taking, reading | User behavior, chat apps |
-
-**Both patterns share the core insight:** Knowledge should compound over time, not be re-derived every query.
-
-**They're complementary:**
-- `honcho-local` - Agent memory and user interactions
-- `LLM Wiki` - Knowledge management and documentation
-- **Together** - Agents can export to wiki for human browsing
-
-## Components Explained
-
- honcho-local integrates several powerful tools. Here's what each one does:
-
-| Component | What is it? | Why use it? |
-|-----------|-------------|-------------|
-| **Ollama** | Local LLM runner - runs AI models on your machine | No API costs, works offline, privacy-first |
-| **qwen3.5:9b** | Chat model with "thinking" capability | See the AI's reasoning process, faster responses |
-| **qwen3-embedding:0.6b** | Converts text to vector numbers | Enables semantic search - find related messages |
-| **Obsidian** | Knowledge base app for markdown files | Visualize connections, graph view, linked notes |
-| **Mermaid** | Diagrams in markdown using code | Architecture docs rendered automatically on GitHub |
-| **Honcho** | Memory library for AI agents | Track user behavior across sessions, detect patterns |
-| **LLM Wiki** | Pattern for persistent AI knowledge | Knowledge that compounds over time vs. re-processing |
-
-**How they work together:**
-1. **Ollama** runs the AI models locally on your machine
-2. **qwen3.5:9b** answers questions and shows its thinking
-3. **qwen3-embedding** converts messages to vectors for search
-4. **Obsidian** lets you browse the exported wiki with graph views
-5. **Mermaid** renders diagrams directly in the README on GitHub
-
-## Requirements
-
-- **Ollama** running locally
-- **Python 3.10+**
-- **Dependencies:** `ollama`, `psycopg2-binary` (optional)
-
-## Documentation
-
-Full documentation in the [skill documentation](plugins/honcho-local/skills/honcho-local/SKILL.md).
-
-## Inspiration & Attribution
-
-This project is inspired by and builds upon:
-
-- **[Honcho by Plastic Labs](https://github.com/plastic-labs/honcho)** - Memory library for stateful agents
-- **[LLM Wiki pattern by Andrej Karpathy](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)** - Personal knowledge bases with LLMs
-- **[Ollama](https://ollama.ai)** - Local LLM inference engine
-
-The honcho-local implementation provides:
-- Local-first alternative to Honcho's cloud service
-- Wiki export compatible with Karpathy's LLM Wiki pattern
-- Bidirectional bridge between agent memory and human-readable wiki
+## Inspiration
+
+- **[Honcho by Plastic Labs](https://github.com/plastic-labs/honcho)** - Official memory library
+- **[LLM Wiki pattern by Andrej Karpathy](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)** - Knowledge that compounds
+- **[Ollama](https://ollama.com)** - Local LLM inference
 
 ## License
 
@@ -764,4 +264,4 @@ MIT License
 
 ## Author
 
-Beyhan Meyrali - [beyhanmeyrali@gmail.com](mailto:beyhanmeyrali@gmail.com)
+Beyhan MEYRALI - [beyhanmeyrali@gmail.com](mailto:beyhanmeyrali@gmail.com)

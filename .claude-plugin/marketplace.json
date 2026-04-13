@@ -1,18 +1,18 @@
 {
   "name": "bms-marketplace",
-  "description": "Local-first AI agent utilities - memory, reasoning, and development tools",
+  "description": "Claude Code plugins for AI agent development - memory, knowledge management, and local LLM integration",
   "version": "1.0.0",
   "owner": {
-    "name": "Beyhan Meyrali",
+    "name": "Beyhan MEYRALI",
     "email": "beyhanmeyrali@gmail.com"
   },
   "plugins": [
     {
-      "name": "honcho-local",
-      "description": "Local-first memory and reasoning for AI agents using Ollama - no API keys required",
+      "name": "honcho-bridge",
+      "description": "Official Honcho memory system with Ollama integration for Claude Code. Installs and configures Honcho locally with Docker Postgres + Ollama (no API keys). Includes wiki export/import skills for knowledge management.",
       "version": "1.0.0",
-      "source": "./plugins/honcho-local",
-      "tags": ["memory", "ollama", "local-llm", "agent", "reasoning"]
+      "source": "./plugins/honcho-bridge",
+      "tags": ["memory", "honcho", "ollama", "local-llm", "agent", "knowledge-base", "wiki", "obsidian"]
     }
   ]
 }

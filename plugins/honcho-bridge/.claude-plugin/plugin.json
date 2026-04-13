@@ -1,7 +1,7 @@
 {
-  "name": "honcho-local",
+  "name": "honcho-bridge",
   "version": "1.0.0",
-  "description": "Local-first memory and reasoning for AI agents using Ollama. Provides peer-based user modeling, session management, and natural language queries about user behavior - all running locally with no API keys required.",
+  "description": "Claude Code plugin for Honcho memory system with Ollama integration. Installs official Honcho locally + provides wiki export/import skills for knowledge management.",
   "author": {
     "name": "Beyhan Meyrali",
     "email": "beyhanmeyrali@gmail.com"
