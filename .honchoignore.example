@@ -1,0 +1,62 @@
+# Honcho Ignore Patterns
+# Files and paths matching these patterns will not be stored in memory
+
+# Certificate and key files
+*.key
+*.pem
+*.cert
+*.crt
+*.der
+
+# Secret files
+*.secrets
+*.secret
+.password
+.env.local
+.env.secrets
+.env.production
+.secrets/
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+id_ecdsa
+id_ecdsa.pub
+ssh_host_key
+ssh_host_*_key
+
+# Database files with sensitive data
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+
+# Backup files
+*.bak
+*.backup
+*_backup.*
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Logs (may contain sensitive info)
+*.log
+logs/
+
+# Cache directories
+.cache/
+__pycache__/
+node_modules/.cache/
+
+# IDE specific files
+.vscode/sftp.json
+.idea/
+
+# OS specific
+Thumbs.db
+.DS_Store

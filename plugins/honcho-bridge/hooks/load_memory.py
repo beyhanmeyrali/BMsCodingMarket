@@ -29,6 +29,14 @@ try:
 except ImportError:
     DOTENV_AVAILABLE = False
 
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
+try:
+    import honcho_sync
+    SYNC_AVAILABLE = True
+except ImportError:
+    SYNC_AVAILABLE = False
+
 
 def get_git_username():
     """Get git username from config."""
@@ -81,6 +89,51 @@ HONCHO_BASE_URL=http://localhost:8000
     return False, (workspace, peer, config)
 
 
+def load_claude_native_memory() -> str:
+    """Load memories from Claude's native memory system."""
+    memory_dir = Path.home() / ".claude" / "memory"
+
+    if not memory_dir.exists():
+        return ""
+
+    memories = []
+    try:
+        for md_file in memory_dir.glob("*.md"):
+            try:
+                content = md_file.read_text(encoding="utf-8")
+
+                # Extract memory type from content
+                mem_type = "unknown"
+                for line in content.split("\n"):
+                    if line.startswith("type:"):
+                        mem_type = line.split(":", 1)[1].strip()
+                        break
+
+                # Extract the body content (after frontmatter)
+                if "---" in content:
+                    parts = content.split("---", 2)
+                    if len(parts) >= 3:
+                        body = parts[2].strip()
+                    else:
+                        body = content
+                else:
+                    body = content
+
+                if body:
+                    memories.append(f"[{mem_type.upper()}] {body[:200]}...")
+
+            except Exception:
+                continue
+
+        if memories:
+            return "\n\n[Claude Native Memory]:\n" + "\n".join(memories[:5])  # Limit to 5
+
+    except Exception:
+        pass
+
+    return ""
+
+
 def load_user_memory() -> str:
     """Load and format user memory from Honcho."""
     if not HONCHO_AVAILABLE:
@@ -124,10 +177,19 @@ Edit .env to change these values."""
         # Query for observations about the user
         response = peer.chat("What do you know about this user? Summarize briefly.")
 
+        # Also load Claude native memory
+        claude_memory = load_claude_native_memory()
+
         if response and "don't have any information" not in response.lower():
-            return f"[Honcho Memory] Workspace: {workspace} | Peer: {peer_id}\n\n{response}"
+            result = f"[Honcho Memory] Workspace: {workspace} | Peer: {peer_id}\n\n{response}"
+            if claude_memory:
+                result += "\n\n" + claude_memory
+            return result
         else:
-            return f"[Honcho] Workspace: {workspace} | Peer: {peer_id}\nNo observations yet. Use /honcho-store to save information."
+            result = f"[Honcho] Workspace: {workspace} | Peer: {peer_id}\nNo observations yet. Use /honcho-store to save information."
+            if claude_memory:
+                result += "\n\n" + claude_memory
+            return result
 
     except Exception as e:
         return f"[Honcho] Connection failed: {e}"

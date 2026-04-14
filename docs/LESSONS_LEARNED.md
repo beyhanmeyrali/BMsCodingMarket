@@ -114,3 +114,154 @@ The `docker-compose.yml` health check for the deriver container tries to connect
 **Date:** 2026-04-13
 
 `uv run fastapi dev` crashes on Windows with `UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f680'` because the Windows console cp1252 codec can't render the 🚀 emoji in fastapi-cli's startup banner. Use `uvicorn src.main:app` directly or set `PYTHONIOENCODING=utf-8`. Moot given the `fcntl` blocker, but worth noting for other FastAPI projects.
+
+---
+
+## Honcho-Bridge Enhancement Implementation (April 2026)
+
+**Date:** 2026-04-14
+
+### Feature 1: Privacy Redaction Module
+
+**Implementation:** Created `privacy/redact.py` with configurable pattern matching.
+
+**Key patterns:**
+- Email: `\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b`
+- API Key: `\b(API_?KEY|SECRET|TOKEN)\s*[:=]\s*\S+`
+- IP Address: `\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b`
+
+**Lesson:** Use environment variable `HONCHO_PRIVACY_ENABLED` to allow opt-out during testing.
+
+### Feature 2: Hook Event Types
+
+**Discovered:** Claude Code supports 6 hook events:
+1. SessionStart - When session begins
+2. SessionEnd - When session ends
+3. UserPromptSubmit - Before user prompt sent to LLM
+4. PostToolUse - After tool execution completes
+5. PreCompact - Before context compaction
+6. SubagentStop - When subagent finishes
+
+**Lesson:** Async hooks should not block the main workflow. Use `async: true` for PostToolUse and SubagentStop.
+
+### Feature 3: Critical Fact Detection
+
+**Pattern:** Use regex to detect statements like "REMEMBER:", "never forget", "IMPORTANT:"
+
+```python
+CRITICAL_PATTERNS = [
+    r"\bREMEMBER\s*:?\s*(.+)",
+    r"\bnever forget\s*:?\s*(.+)",
+    r"\bimportant\s*:?\s*(.+)",
+]
+```
+
+**Lesson:** Store critical facts in a dedicated "critical-facts" session to bypass deriver latency.
+
+### Feature 4: Claude Native Memory Integration
+
+**Location:** `$HOME/.claude/memory/`
+
+**Format:** Markdown files with YAML frontmatter:
+```yaml
+---
+name: preference_name
+description: Brief description
+type: feedback
+---
+```
+
+**Memory types:** user, feedback, project, reference
+
+**Lesson:** Classify observations by content analysis when type is not explicitly set.
+
+### Feature 5: Memory Hierarchy
+
+**Levels:**
+- **global**: User preferences across all projects
+- **project**: Project-specific decisions (uses folder name)
+- **file**: Specific file-related knowledge
+- **context**: Session-specific information
+
+**Implementation:** Create separate sessions for each level: `memory-{level}-{scope_id}`
+
+**Lesson:** Use session IDs as scoping mechanism within a single workspace.
+
+### Feature 6: Health Dashboard Metrics
+
+**Key metrics:**
+- Freshness: Observations older than 30 days
+- Deriver lag: Messages unprocessed after 5 minutes
+- Storage trends: Growing, stable, or shrinking
+- Duplicates: Semantically similar observations
+
+**Lesson:** The Honcho SDK doesn't directly expose observation counts - must infer from message counts.
+
+### Feature 7: Auto-Tagging Context
+
+**Sources:**
+- Git: branch, commit hash, modified files
+- File system: tech stack from package.json, requirements.txt, etc.
+- Project structure: Detect project type (nextjs, django, rust-cli, etc.)
+
+**File extension mapping:**
+```python
+EXTENSION_MAP = {
+    ".py": "python",
+    ".tsx": "react",
+    ".go": "go",
+    # ...
+}
+```
+
+**Lesson:** Combine special file detection (package.json) with extension scanning for accuracy.
+
+### Feature 8: Team Memory Export/Import
+
+**Export format:** Markdown with frontmatter containing merge metadata
+
+**Conflict detection:** Look for:
+- Contradictions: "never" vs "always", "avoid" vs "prefer"
+- Duplicates: String similarity or substring matching
+
+**Lesson:** Interactive conflict resolution is essential for team workflows.
+
+### Feature 9: Windows Compatibility
+
+**Always include:**
+```python
+if sys.platform == "win32":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+```
+
+**Lesson:** Do this at the TOP of every hook script, not just in imported modules.
+
+### Feature 10: Configuration Management
+
+**Created:** `.env.example` with all new configuration options documented
+
+**New variables:**
+- `HONCHO_PRIVACY_ENABLED`
+- `HONCHO_REDACT_PATTERNS`
+- `HONCHO_CLAUDE_SYNC_MODE`
+- `HONCHO_MEMORY_LEVEL`
+- `HONCHO_SEARCH_THRESHOLD`
+- And 10+ more
+
+**Lesson:** Provide comprehensive example file to guide users through all available options.
+
+### Architecture Decisions
+
+1. **Modular design:** Each feature in its own script file with CLI interface
+2. **Shared utilities:** Common functions in hooks/ directory (auto_tagger.py, redact.py)
+3. **Graceful degradation:** Check `HONCHO_AVAILABLE` before using SDK
+4. **Environment-driven config:** All options configurable via .env or environment variables
+
+### Testing Approach
+
+1. **Unit test patterns:** Each script has testable functions exposed at module level
+2. **Dry-run modes:** Export and merge scripts support --dry-run flag
+3. **Status output:** All hooks print status messages when run without input
+4. **Error handling:** Try-except blocks with descriptive error messages
