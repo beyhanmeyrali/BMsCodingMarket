@@ -10,7 +10,7 @@
     {
       "name": "honcho-bridge",
       "description": "Official Honcho memory system with Ollama integration for Claude Code. Installs and configures Honcho locally with Docker Postgres + Ollama (no API keys). Includes wiki export/import skills for knowledge management.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "source": "./plugins/honcho-bridge",
       "tags": ["memory", "honcho", "ollama", "local-llm", "agent", "knowledge-base", "wiki", "obsidian"]
     }

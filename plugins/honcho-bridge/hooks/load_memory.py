@@ -23,6 +23,12 @@ try:
 except ImportError:
     HONCHO_AVAILABLE = False
 
+try:
+    from dotenv import load_dotenv
+    DOTENV_AVAILABLE = True
+except ImportError:
+    DOTENV_AVAILABLE = False
+
 
 def get_git_username():
     """Get git username from config."""
@@ -96,7 +102,12 @@ def load_user_memory() -> str:
 Your memory will be stored under this workspace.
 Edit .env to change these values."""
 
-    # Read from .env or use defaults
+    # Load .env file if available
+    env_file = Path.cwd() / ".env"
+    if DOTENV_AVAILABLE and env_file.exists():
+        load_dotenv(env_file)
+
+    # Read from environment or use defaults
     workspace = os.getenv("HONCHO_WORKSPACE", "default")
     peer_id = os.getenv("HONCHO_PEER_ID", "user")
     base_url = os.getenv("HONCHO_BASE_URL", "http://localhost:8000")
