@@ -28,6 +28,8 @@ class OllamaEmbedder:
 
     # Known embedding dimensions for common models
     MODEL_DIMENSIONS = {
+        "qwen3-embedding": 1024,
+        "qwen3-embedding:0.6b": 1024,
         "qwen3:0.6b": 768,
         "qwen3:0.6b-f16": 768,
         "nomic-embed-text": 768,

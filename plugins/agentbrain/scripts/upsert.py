@@ -30,8 +30,8 @@ def get_config() -> dict:
         "qdrant_api_key": os.environ.get("QDRANT_API_KEY", ""),
         # Ollama config
         "ollama_base_url": os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
-        "embedding_model": os.environ.get("EMBEDDING_MODEL", "qwen3:0.6b"),
-        "embedding_dim": int(os.environ.get("EMBEDDING_DIMENSION", "768")),
+        "embedding_model": os.environ.get("EMBEDDING_MODEL", "qwen3-embedding:0.6b"),
+        "embedding_dim": int(os.environ.get("EMBEDDING_DIMENSION", "1024")),
         # Default scope
         "default_scope": os.environ.get("AGENTBRAIN_SCOPE", "user"),
     }
@@ -39,7 +39,7 @@ def get_config() -> dict:
 
 def get_memory_dir() -> Path:
     """Get the memory directory path."""
-    memory_dir = os.environ.get("MEMORY_DIR", "")
+    memory_dir = os.environ.get("MEMORY_DIR", "~/.claude/memory")
     if memory_dir == "~/.claude/memory":
         memory_dir = str(Path.home() / ".claude" / "memory")
     return Path(memory_dir).expanduser()
@@ -83,9 +83,16 @@ def load_memory_file(file_path: str) -> dict:
         # Remove frontmatter from content
         content = content[match.end():]
 
+    # Calculate relative path as string
+    try:
+        relative_path = str(full_path.relative_to(memory_dir))
+    except ValueError:
+        # Not relative to memory_dir
+        relative_path = full_path.name
+
     return {
         "file_path": str(full_path),
-        "relative_path": full_path.relative_to(memory_dir) if full_path.is_relative_to(memory_dir) else full_path.name,
+        "relative_path": relative_path,
         "content": content.strip(),
         "frontmatter": frontmatter,
     }

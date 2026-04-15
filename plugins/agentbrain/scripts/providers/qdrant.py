@@ -20,7 +20,6 @@ try:
         Filter,
         FieldCondition,
         MatchAny,
-        PayloadSchemaType,
     )
 except ImportError:
     raise ImportError(
@@ -85,24 +84,21 @@ class QdrantProvider(VectorDBProvider):
                     size=self.embedding_dim,
                     distance=Distance.COSINE,
                 ),
-                # Optimized for filtering operations
-                optimizers_config={
-                    "indexing_threshold": 20000,
-                },
-                # Payload index for scope filtering
-                payload_schema={
-                    "file_path": PayloadSchemaType.KEYWORD,
-                    "scope": PayloadSchemaType.KEYWORD,
-                    "type": PayloadSchemaType.KEYWORD,
-                    "created_at": PayloadSchemaType.INTEGER,
-                    "updated_at": PayloadSchemaType.INTEGER,
-                    "provenance_weight": PayloadSchemaType.FLOAT,
-                    "source": PayloadSchemaType.KEYWORD,
-                    "author": PayloadSchemaType.KEYWORD,
-                    "workspace": PayloadSchemaType.KEYWORD,
-                    "pinned": PayloadSchemaType.BOOL,
-                },
             )
+
+            # Create payload indexes for filtered fields
+            # This improves query performance for scope filtering
+            try:
+                from qdrant_client.models import PayloadIndexParams, PayloadSchemaType
+
+                self.client.create_payload_index(
+                    collection_name=self.collection,
+                    field_name="scope",
+                    field_schema=PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                # Index creation might fail in older versions, that's ok
+                pass
 
         self._initialized = True
 

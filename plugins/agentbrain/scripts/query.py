@@ -29,8 +29,8 @@ def get_config() -> dict:
         "qdrant_api_key": os.environ.get("QDRANT_API_KEY", ""),
         # Ollama config
         "ollama_base_url": os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
-        "embedding_model": os.environ.get("EMBEDDING_MODEL", "qwen3:0.6b"),
-        "embedding_dim": int(os.environ.get("EMBEDDING_DIMENSION", "768")),
+        "embedding_model": os.environ.get("EMBEDDING_MODEL", "qwen3-embedding:0.6b"),
+        "embedding_dim": int(os.environ.get("EMBEDDING_DIMENSION", "1024")),
         # Query config
         "top_k": int(os.environ.get("RETRIEVAL_TOP_K", "8")),
         "min_score": float(os.environ.get("RETRIEVAL_MIN_SCORE", "0.6")),

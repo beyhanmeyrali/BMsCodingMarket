@@ -15,7 +15,7 @@ from typing import Dict, List, Tuple
 
 def get_memory_dir() -> Path:
     """Get the memory directory path."""
-    memory_dir = os.environ.get("MEMORY_DIR", "")
+    memory_dir = os.environ.get("MEMORY_DIR", "~/.claude/memory")
     if memory_dir == "~/.claude/memory":
         memory_dir = str(Path.home() / ".claude" / "memory")
     return Path(memory_dir).expanduser()
