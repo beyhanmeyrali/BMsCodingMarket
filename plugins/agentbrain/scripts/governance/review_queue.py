@@ -49,6 +49,21 @@ def get_all_memories(qdrant: QdrantProvider) -> List[Dict]:
             if offset is None:
                 break
 
+        def parse_timestamp(ts) -> int:
+            """Parse timestamp to int (handles both string and int)."""
+            if ts is None:
+                return 0
+            if isinstance(ts, int):
+                return ts
+            if isinstance(ts, str):
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(ts)
+                    return int(dt.timestamp())
+                except Exception:
+                    pass
+            return 0
+
         return [
             {
                 "id": r.id,
@@ -56,7 +71,7 @@ def get_all_memories(qdrant: QdrantProvider) -> List[Dict]:
                 "type": r.payload.get("type", "unknown"),
                 "file_path": r.payload.get("file_path", ""),
                 "content": r.payload.get("content", ""),
-                "created_at": r.payload.get("created_at", 0),
+                "created_at": parse_timestamp(r.payload.get("created_at")),
                 "access_count": r.payload.get("access_count", 0),
                 "thumbs_up": r.payload.get("thumbs_up", 0),
             }
