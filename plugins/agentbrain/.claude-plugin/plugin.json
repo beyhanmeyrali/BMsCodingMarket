@@ -1,0 +1,12 @@
+{
+  "name": "agentbrain",
+  "version": "0.1.0",
+  "description": "Enterprise-grade persistent memory system for Claude Code with semantic retrieval, multi-tenant scoping, and auto-curation. Uses Qdrant vector DB and Ollama for local embeddings.",
+  "author": {
+    "name": "Beyhan Meyrali",
+    "email": "beyhanmeyrali@gmail.com"
+  },
+  "homepage": "https://github.com/beyhanmeyrali/BMsCodingMarket",
+  "repository": "https://github.com/beyhanmeyrali/BMsCodingMarket",
+  "license": "MIT"
+}

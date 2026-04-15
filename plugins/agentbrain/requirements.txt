@@ -1,0 +1,14 @@
+# AgentBrain Python Dependencies
+
+# Vector Database
+qdrant-client>=1.12.0
+
+# HTTP Requests
+requests>=2.31.0
+
+# Configuration
+pyyaml>=6.0.1
+python-dotenv>=1.0.0
+
+# Optional: Direct Ollama integration
+# ollama>=0.1.0

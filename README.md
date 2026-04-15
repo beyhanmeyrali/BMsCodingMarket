@@ -2,7 +2,9 @@
 
 > **Claude Code plugins for local AI development** — Fully offline memory, wiki bridge, workflow automation, and team collaboration.
 
-## Featured Plugin: honcho-bridge
+## Plugins
+
+### Featured: honcho-bridge
 
 **`honcho-bridge`** is a comprehensive Python-based Claude Code plugin for working with a **local Honcho memory system**. It enables persistent AI memory that runs entirely on your machine — no API keys, no cloud, no monthly fees.
 
@@ -378,5 +380,21 @@ BMsCodingMarket/
 MIT
 
 ---
+
+## Coming Soon: AgentBrain
+
+**`agentbrain`** is an enterprise-grade persistent memory system for Claude Code. It enables teams to share knowledge, conventions, and context across sessions and projects.
+
+### Features
+
+- **Persistent memory** — Sessions end, learnings remain
+- **Shared knowledge** — Team and project-level memory layers
+- **Semantic retrieval** — Vector DB finds relevant memories automatically
+- **Auto-curation** — Subagents summarize, categorize, and dedup
+- **100% self-hosted** — Your data, your infra, free/OSS tools only
+
+### Status
+
+🚧 **In Development** — See [`docs/AgentBrain/`](docs/AgentBrain/) for design and implementation plan.
 
 **Author:** [Beyhan Meyrali](https://github.com/beyhanmeyrali)

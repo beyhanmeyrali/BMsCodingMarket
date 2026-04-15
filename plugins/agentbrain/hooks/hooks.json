@@ -1,0 +1,17 @@
+{
+  "description": "AgentBrain: Enterprise memory system with semantic retrieval and multi-tenant scoping.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.py\"",
+            "async": false
+          }
+        ]
+      }
+    ]
+  }
+}
