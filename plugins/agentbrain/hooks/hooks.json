@@ -25,6 +25,18 @@
         ]
       }
     ],
+    "SessionEnd": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/session-end-auto-capture.py\"",
+            "async": true
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": ".*",

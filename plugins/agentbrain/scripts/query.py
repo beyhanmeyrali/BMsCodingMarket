@@ -7,6 +7,7 @@ Returns relevant memories based on query meaning, not just keywords.
 
 import os
 import sys
+import time
 from pathlib import Path
 from typing import List, Optional
 
@@ -179,14 +180,31 @@ def query_memories(
             min_score=min_score,
         )
 
-        # Load full content for each result
+        # Load full content for each result and track access
         for result in results:
             if result.memory.content:
                 # Content already in payload
-                continue
-            # Load from file
-            content = load_memory_content(result.memory.file_path)
-            result.memory.content = content
+                pass
+            else:
+                # Load from file
+                content = load_memory_content(result.memory.file_path)
+                result.memory.content = content
+
+            # Track access count for auto-promotion
+            try:
+                from qdrant_client.models import Payload
+
+                current_access = result.memory.metadata.get("access_count", 0)
+                qdrant.client.overwrite_payload(
+                    collection_name=qdrant.collection,
+                    payload={
+                        "access_count": current_access + 1,
+                        "last_accessed": int(time.time()),
+                    },
+                    points=[result.id],
+                )
+            except Exception:
+                pass  # Non-critical
 
         return results
 
