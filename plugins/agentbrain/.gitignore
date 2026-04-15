@@ -33,3 +33,7 @@ test-data/
 
 # Logs
 *.log
+
+# AgentBrain runtime
+.agentbrain/
+MEMORY.md
