@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(rmdir \"C:/Users/beyha/.claude/plugins/cache/honcho\")",
-      "Read(//c/Users/beyha/.claude/plugins/cache/**)"
+      "Read(//c/Users/beyha/.claude/plugins/cache/**)",
+      "Bash(rm -f \"C:/Users/beyha/.claude/memory/test_preferences.md\")",
+      "Bash(docker-compose -f \"e:/workspace/BMsCodingMarket/plugins/agentbrain/docker/qdrant-compose.yml\" down)"
     ]
   }
 }

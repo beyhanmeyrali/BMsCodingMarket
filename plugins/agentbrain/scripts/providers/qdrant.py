@@ -299,7 +299,27 @@ class QdrantProvider(VectorDBProvider):
         """
         self._ensure_initialized()
         try:
-            self.client.delete(collection_name=self.collection, points_selector=[])
+            # Delete and recreate collection (more reliable than filtered delete)
+            from qdrant_client.models import VectorParams, Distance
+
+            self.client.delete_collection(collection_name=self.collection)
+            self.client.create_collection(
+                collection_name=self.collection,
+                vectors_config=VectorParams(
+                    size=self.embedding_dim,
+                    distance=Distance.COSINE,
+                ),
+            )
+            # Recreate payload index
+            try:
+                from qdrant_client.models import PayloadIndexParams, PayloadSchemaType
+                self.client.create_payload_index(
+                    collection_name=self.collection,
+                    field_name="scope",
+                    field_schema=PayloadSchemaType.KEYWORD,
+                )
+            except Exception:
+                pass  # Index creation is optional
             return True
         except Exception:
             return False

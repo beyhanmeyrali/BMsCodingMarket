@@ -67,6 +67,24 @@ def classify_memory(text: str) -> tuple[str, str]:
     return memory_type, scope
 
 
+def sanitize_filename(name: str) -> str:
+    """
+    Sanitize a string for use as a filename on Windows.
+
+    Args:
+        name: String to sanitize
+
+    Returns:
+        Sanitized string safe for use as filename.
+    """
+    # Characters invalid on Windows: < > : " / \ | ? *
+    # Also replace newlines and other control characters
+    invalid_chars = '<>:"/\\|?*\n\r\t'
+    for char in invalid_chars:
+        name = name.replace(char, '-')
+    return name
+
+
 def generate_memory_name(text: str, memory_type: str) -> str:
     """
     Generate a filename for the memory.
@@ -92,8 +110,9 @@ def generate_memory_name(text: str, memory_type: str) -> str:
     if not key_words:
         key_words = ["memory"]
 
-    # Create slug
+    # Create slug (sanitize for Windows)
     slug = "_".join(key_words)[:30]
+    slug = sanitize_filename(slug)
 
     # Add type prefix and timestamp
     timestamp = datetime.now().strftime("%Y%m%d")
