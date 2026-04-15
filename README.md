@@ -4,9 +4,72 @@
 
 ## Plugins
 
-### Featured: honcho-bridge
+### Featured: AgentBrain (NEW!)
 
-**`honcho-bridge`** is a comprehensive Python-based Claude Code plugin for working with a **local Honcho memory system**. It enables persistent AI memory that runs entirely on your machine — no API keys, no cloud, no monthly fees.
+**`AgentBrain`** is an enterprise-grade persistent memory system with **semantic retrieval, multi-tenant scoping, and automatic knowledge accumulation**.
+
+Knowledge accumulates automatically — no silos, no manual /remember needed.
+
+```bash
+/plugin install agentbrain@bms-marketplace
+```
+
+#### Key Features
+
+| Feature | What It Does |
+|---------|--------------|
+| **Semantic Memory** | Finds relevant context automatically using vector search |
+| **Multi-Tenant** | User, team, project, org scopes with proper isolation |
+| **Auto-Capture** | Extracts insights from conversations automatically |
+| **Auto-Promote** | Frequently accessed memories become team knowledge |
+| **100% Offline** | Qdrant + Ollama, zero API costs |
+| **Context Rot Prevention** | Decay sweep removes stale memories |
+| **Extractors** | Import from PRs, ADRs, incidents |
+
+#### How It Works (Invisible)
+
+```
+User: "How do I deploy to production?"
+
+[PreResponse hook runs → Queries Qdrant → Injects memories]
+
+Claude: "Based on our team conventions, we use GitHub Actions..."
+```
+
+Knowledge accumulates automatically:
+- SessionEnd captures insights
+- 3+ accesses → auto-promote to team
+- No manual /remember needed
+
+#### Quick Start
+
+```bash
+# 1. Start Qdrant + Ollama
+docker compose -f plugins/agentbrain/docker/qdrant-compose.yml up -d
+ollama pull qwen3-embedding:0.6b
+
+# 2. Install
+/plugin install agentbrain@bms-marketplace
+
+# 3. Use (or let it auto-capture)
+/remember "We use PostgreSQL for production"
+/recall "database"
+```
+
+#### Commands
+
+| Command | Purpose |
+|---------|---------|
+| `/remember <info>` | Store information |
+| `/recall <query>` | Retrieve memories |
+| `/forget <topic>` | Delete a memory |
+| `/promote <mem> --to <scope>` | Share with team |
+
+---
+
+### honcho-bridge
+
+**`honcho-bridge`** is a Python-based Claude Code plugin for working with a **local Honcho memory system**. It enables persistent AI memory that runs entirely on your machine — no API keys, no cloud, no monthly fees.
 
 ### Why honcho-bridge?
 
@@ -29,67 +92,100 @@ The official [plastic-labs/claude-honcho](https://github.com/plastic-labs/claude
 
 ## Quick Start
 
-### 1. Install Dependencies
+### AgentBrain (Recommended)
 
 ```bash
+# 1. Start Qdrant
+docker compose -f plugins/agentbrain/docker/qdrant-compose.yml up -d
+
+# 2. Pull embedding model
+ollama pull qwen3-embedding:0.6b
+
+# 3. Install plugin
+/plugin marketplace add beyhanmeyrali/BMsCodingMarket
+/plugin install agentbrain@bms-marketplace
+```
+
+### honcho-bridge
+
+```bash
+# 1. Install dependencies
 pip install honcho-ai pyyaml python-dotenv
-```
 
-### 2. Start Local Honcho (Docker + Ollama)
+# 2. Start local Honcho (Docker + Ollama)
+# See docs/HONCHO_SETUP_GUIDE.md for full setup
 
-Follow the full setup guide: **[`docs/HONCHO_SETUP_GUIDE.md`](docs/HONCHO_SETUP_GUIDE.md)**
-
-```powershell
-git clone https://github.com/plastic-labs/honcho.git E:\workspace\honcho
-cd E:\workspace\honcho
-# Apply patches, configure .env, then:
-docker compose up -d --build
-```
-
-### 3. Install the Plugin
-
-**Important:** If you have the official `plastic-labs/claude-honcho` plugin installed, uninstall it first:
-
-```
-/plugin marketplace remove plastic-labs/claude-honcho
-```
-
-Then install this plugin:
-
-```
+# 3. Install plugin
 /plugin marketplace add beyhanmeyrali/BMsCodingMarket
 /plugin install honcho-bridge@bms-marketplace
 ```
 
-## Quick Start: Using the Plugin
+## Comparison: AgentBrain vs honcho-bridge
 
-### Store Information to Memory
+| Feature | AgentBrain | honcho-bridge |
+|---------|-----------|---------------|
+| **Backend** | Qdrant | Honcho |
+| **Embeddings** | Ollama (local) | Ollama (local) |
+| **Scoping** | Multi-tenant (user/team/project/org) | Workspace/peer only |
+| **Auto-capture** | ✅ Yes | ⚠️ Partial |
+| **Auto-promote** | ✅ Yes (3+ accesses) | ❌ No |
+| **PR Import** | ✅ Yes | ❌ No |
+| **ADR Import** | ✅ Yes | ❌ No |
+| **Incident Import** | ✅ Yes | ❌ No |
+| **Decay Sweep** | ✅ Yes | ❌ No |
+| **Team Sync** | ✅ Repo-based | ⚠️ Manual export/import |
 
-```
-/honcho-store "I prefer TypeScript for frontend projects"
-```
-
-### Query Your Memory
-
-```
-/honcho-query "What are my coding preferences?"
-```
-
-### Advanced Search
-
-```
-/honcho-search "authentication decisions" --file-pattern "src/auth/*" --after 7d
-```
-
-### Get Suggestions
-
-```
-/honcho-suggest "I'm implementing user authentication"
-```
+Choose **AgentBrain** for enterprise teams with multi-project environments.
+Choose **honcho-bridge** for personal use with Honcho workspaces.
 
 ---
 
-## Commands Reference
+## AgentBrain Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    KNOWLEDGE FLOW                            │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  User: "We decided to use Redis for caching"               │
+│     ↓                                                       │
+│  [Auto-capture] SessionEnd detects pattern                 │
+│     ↓                                                       │
+│  [Auto-store] /remember "We decided to use Redis..."        │
+│     ↓                                                       │
+│  [Auto-promote] Team-relevant → team:platform              │
+│     ↓                                                       │
+│  [PreResponse] Others ask about caching → Auto-inject      │
+│                                                             │
+│  Result: One person's discovery → Team knowledge           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Multi-Tenant Isolation
+
+```
+NTT Data (org:ntt-data)
+├── Acme Corp (client:acme)
+│   └── Alice sees: Acme + platform + org memories
+├── GlobalBank (client:globalbank)
+│   └── Bob sees: GlobalBank + platform + org memories
+└── Platform Team (team:platform)
+    └── Everyone sees: Platform conventions
+```
+
+### Governance (Anti-Context-Rot)
+
+| Feature | Purpose |
+|---------|---------|
+| **Health Score** | 0-100 based on age, access, feedback |
+| **Decay Sweep** | Deletes memories 90+ days untouched |
+| **Access Tracking** | Counts retrievals for promotion |
+| **Review Queue** | Shows memories ready for promotion |
+
+---
+
+## honcho-bridge Commands
 
 | Command | Purpose |
 |---------|---------|
@@ -109,117 +205,35 @@ Then install this plugin:
 
 ---
 
-## Features Overview
-
-### 🔒 Privacy Controls
-
-- **Automatic redaction** of sensitive information (emails, API keys, passwords, IPs)
-- **`.honchoignore`** file for excluding sensitive files from memory
-- **Per-session opt-out** capability
-
-```bash
-# Enable privacy features
-HONCHO_PRIVACY_ENABLED=true
-HONCHO_REDACT_PATTERNS=email,api_key,password,ip
-```
-
-### 🪝 Enhanced Hooks
-
-The plugin includes 6 automatic hooks that capture context throughout your session:
-
-| Hook | When It Runs | What It Does |
-|------|--------------|--------------|
-| **SessionStart** | When you start a new Claude session | Loads your context from Honcho + Claude native memory |
-| **UserPromptSubmit** | Before sending your prompt to Claude | Detects critical facts (REMEMBER:, never forget) and stores immediately |
-| **PostToolUse** | After any tool execution | Tracks tool usage patterns and detects tech stack |
-| **PreCompact** | Before context compaction | Summarizes important points to preserve them |
-| **SessionEnd** | When session ends | Saves conversation for observation extraction |
-| **SubagentStop** | When subagent completes | Captures learnings from delegated work |
-
-### 📊 Memory Hierarchy
-
-Organize memories at different levels for better context:
-
-- **Global**: User preferences across all projects
-- **Project**: Project-specific decisions and context
-- **File**: Specific file-related knowledge
-- **Context**: Session-specific information
-
-```
-/honcho-hierarchy store global "I always use TypeScript for new projects"
-/honcho-hierarchy query project --scope my-project
-```
-
-### 🔄 Claude Native Memory Sync
-
-Bidirectional sync with Claude Code's built-in memory system:
-
-```bash
-# Sync both directions
-/honcho-sync --mode bidirectional
-
-# Export Honcho to Claude memory
-/honcho-sync --mode honcho-to-claude
-
-# Import Claude memory to Honcho
-/honcho-sync --mode claude-to-honcho
-```
-
-### 🔍 Advanced Search
-
-Semantic search with powerful filters:
-
-```bash
-# Search by file pattern
-/honcho-search "error handling" --file-pattern "src/**/*.py"
-
-# Search recent memories
-/honcho-search "decisions" --after 30d
-
-# Search by memory level
-/honcho-search "preferences" --memory-type global
-```
-
-### 💊 Memory Health Dashboard
-
-Monitor your memory system health:
-
-```bash
-/honcho-health
-```
-
-Shows:
-- Stale observations (older than 30 days)
-- Deriver lag (unprocessed messages)
-- Storage trends (growing/stable/shrinking)
-- Potential duplicates
-
-### 🏷️ Context-Aware Auto-Tagging
-
-Every memory is automatically tagged with:
-
-- **Git context**: branch, commits, modified files
-- **Tech stack**: detected from package.json, requirements.txt, etc.
-- **Project type**: nextjs, django, rust-cli, etc.
-- **Folder and workspace**: for organization
-
-### 👥 Team Collaboration
-
-Share and merge memories with your team:
-
-```bash
-# Export for team review
-python scripts/honcho_export_team.py --output team-memory/
-
-# After review and edits, import with conflict resolution
-python scripts/honcho_merge_team.py --import-dir team-memory/
-```
-
----
-
 ## Configuration
 
-Copy `.env.example` to `.env` and customize:
+### AgentBrain
+
+```bash
+# Qdrant
+QDRANT_HOST=localhost
+QDRANT_PORT=6333
+QDRANT_COLLECTION=agentbrain_memories
+
+# Ollama
+OLLAMA_BASE_URL=http://localhost:11434
+EMBEDDING_MODEL=qwen3-embedding:0.6b
+EMBEDDING_DIMENSION=1024
+
+# Multi-tenant
+AGENTBRAIN_TEAM_ID=platform
+AGENTBRAIN_ORG_ID=acme
+
+# Auto-curation
+AUTO_PROMOTE_THRESHOLD=3
+AGENTBRAIN_AUTO_CAPTURE=true
+
+# Governance
+DECAY_STALE_DAYS=60
+DECAY_ROT_DAYS=90
+```
+
+### honcho-bridge
 
 ```bash
 # Core Configuration
@@ -230,65 +244,10 @@ HONCHO_BASE_URL=http://localhost:8000
 # Privacy
 HONCHO_PRIVACY_ENABLED=true
 HONCHO_REDACT_PATTERNS=email,api_key,password,ip
-HONCHO_SESSION_OPT_OUT=false
 
 # Critical Facts (immediate storage)
 HONCHO_IMMEDIATE_STORE=true
 HONCHO_CRITICAL_PATTERNS=remember:|never forget|important:
-
-# Claude Sync
-HONCHO_CLAUDE_SYNC_MODE=bidirectional
-
-# Memory Hierarchy
-HONCHO_MEMORY_LEVEL=project
-
-# Search
-HONCHO_SEARCH_THRESHOLD=0.7
-HONCHO_SEARCH_DEFAULT_AFTER=30d
-
-# Health Dashboard
-HONCHO_STALE_THRESHOLD_DAYS=30
-HONCHO_DERIVER_LAG_WARNING_MINUTES=5
-```
-
----
-
-## How Honcho Memory Works
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Session 1                                    │
-│  "I use TypeScript, prefer Neovim, work in fintech"            │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Honcho Deriver                                │
-│  (background worker, runs every ~1 minute)                      │
-│                                                                 │
-│  • Reads messages                                               │
-│  • Calls local LLM (Ollama)                                     │
-│  • Extracts structured observations                             │
-│  • Stores with vector embeddings                                │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     Observations                                 │
-│  • User prefers TypeScript                                      │
-│  • User uses Neovim as editor                                   │
-│  • User works in fintech industry                               │
-│  • User prefers concise answers                                 │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     Session 2 (later)                            │
-│  "Help me add auth"                                             │
-│                                                                 │
-│  Agent already knows: TypeScript stack, Neovim, fintech        │
-│  No need to repeat context!                                     │
-└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -298,40 +257,34 @@ HONCHO_DERIVER_LAG_WARNING_MINUTES=5
 ```
 BMsCodingMarket/
 ├── plugins/
-│   └── honcho-bridge/              # Main plugin
+│   ├── agentbrain/                 # Enterprise memory system
+│   │   ├── commands/               # /remember, /recall, /forget, /promote
+│   │   ├── skills/                 # remember, recall, forget, promote, install
+│   │   ├── scripts/
+│   │   │   ├── providers/          # Qdrant, Ollama clients
+│   │   │   ├── extractors/         # PR, ADR, Incident importers
+│   │   │   ├── governance/         # Stats, review queue, decay sweep
+│   │   │   ├── query.py            # Semantic search
+│   │   │   ├── upsert.py           # Memory storage
+│   │   │   └── auto_curation.py    # Auto-promote logic
+│   │   ├── hooks/                  # SessionStart, PreResponse, SessionEnd
+│   │   ├── agents/                 # Memory curator subagent
+│   │   ├── tests/                  # Multi-tenant test suite
+│   │   ├── docker/                 # Qdrant compose file
+│   │   └── CLAUDE_GUIDE.md         # User guide for Claude Code
+│   └── honcho-bridge/              # Honcho local bridge
 │       ├── commands/               # Slash commands (10+)
 │       ├── skills/                 # Reusable skills (6)
 │       ├── scripts/                # Python utilities (14)
-│       │   ├── honcho_query.py
-│       │   ├── honcho_store.py
-│       │   ├── honcho_status.py
-│       │   ├── honcho_search.py    # Advanced search
-│       │   ├── honcho_suggest.py   # Proactive suggestions
-│       │   ├── honcho_sync.py      # Claude memory sync
-│       │   ├── honcho_hierarchy.py # Memory levels
-│       │   ├── honcho_health.py    # Health dashboard
-│       │   ├── honcho_export_team.py
-│       │   ├── honcho_merge_team.py
-│       │   ├── honcho_migrate.py
-│       │   ├── honcho_wipe.py
-│       │   ├── to_wiki.py
-│       │   └── wiki_to_honcho.py
-│       ├── hooks/                  # Event automation (6)
-│       │   ├── load_memory.py      # SessionStart
-│       │   ├── save_messages.py    # SessionEnd
-│       │   ├── user_prompt_submit.py
-│       │   ├── post_tool_use.py
-│       │   ├── pre_compact.py
-│       │   ├── subagent_stop.py
-│       │   ├── auto_tagger.py      # Context tagging
-│       │   └── hooks.json
-│       └── privacy/                # Privacy module
-│           └── redact.py
+│       └── hooks/                  # Event automation (6)
 ├── docs/
-│   ├── HONCHO_SETUP_GUIDE.md       # Full local setup guide
-│   └── LESSONS_LEARNED.md          # Development lessons
+│   ├── AgentBrain/
+│   │   ├── PLAN.md                 # Implementation phases
+│   │   ├── IDEA.md                 # Original concept
+│   │   └── SCENARIO_ANALYSIS.md    # Scenario testing
+│   ├── HONCHO_SETUP_GUIDE.md       # Local Honcho setup
+│   └── LESSONS_LEARNED.md          # Development insights
 ├── .env.example                    # Configuration template
-├── .honchoignore.example           # Privacy ignore patterns
 └── README.md
 ```
 
@@ -341,37 +294,34 @@ BMsCodingMarket/
 
 | Document | Description |
 |----------|-------------|
-| [Honcho Setup Guide](docs/HONCHO_SETUP_GUIDE.md) | Complete guide for running Honcho locally with Docker + Ollama on Windows |
-| [Lessons Learned](docs/LESSONS_LEARNED.md) | Development insights and troubleshooting |
-
----
-
-## Why Local Honcho?
-
-- **Privacy** — All conversations and observations stay on your machine
-- **No API costs** — Use your own Ollama models (qwen3, llama3, mistral, etc.)
-- **Offline** — Works without internet after initial model download
-- **Control** — Modify source, customize models, inspect everything
-- **Speed** — Local inference can be faster than cloud API calls
-- **Compliance** — Keep sensitive code and discussions in-house
-- **Team Ready** — Export/import workflows for team knowledge sharing
+| [AgentBrain Plan](docs/AgentBrain/PLAN.md) | Complete implementation plan |
+| [AgentBrain Scenarios](docs/AgentBrain/SCENARIO_ANALYSIS.md) | Real-world scenario testing |
+| [Honcho Setup Guide](docs/HONCHO_SETUP_GUIDE.md) | Local Honcho setup on Windows |
+| [Lessons Learned](docs/LESSONS_LEARNED.md) | Development insights |
 
 ---
 
 ## Requirements
 
-- **Docker Desktop** (Linux containers mode)
-- **Ollama** — Local inference server
-- **Python 3.10+** with `pip`
+### AgentBrain
+- **Docker Desktop** (for Qdrant)
+- **Ollama** — Local embedding server
+- **Python 3.10+**
+- **Claude Code** — CLI or desktop app
+
+### honcho-bridge
+- **Docker Desktop** (for Honcho + PostgreSQL)
+- **Ollama** — Local LLM server
+- **Python 3.10+**
 - **Claude Code** — CLI or desktop app
 
 ---
 
 ## Links
 
-- [Honcho](https://github.com/plastic-labs/honcho) — The memory platform
-- [claude-honcho](https://github.com/plastic-labs/claude-honcho) — Official cloud plugin
+- [Qdrant](https://qdrant.tech/) — Vector database
 - [Ollama](https://ollama.com) — Local LLM runner
+- [Honcho](https://github.com/plastic-labs/honcho) — Memory platform
 
 ---
 
@@ -380,21 +330,5 @@ BMsCodingMarket/
 MIT
 
 ---
-
-## Coming Soon: AgentBrain
-
-**`agentbrain`** is an enterprise-grade persistent memory system for Claude Code. It enables teams to share knowledge, conventions, and context across sessions and projects.
-
-### Features
-
-- **Persistent memory** — Sessions end, learnings remain
-- **Shared knowledge** — Team and project-level memory layers
-- **Semantic retrieval** — Vector DB finds relevant memories automatically
-- **Auto-curation** — Subagents summarize, categorize, and dedup
-- **100% self-hosted** — Your data, your infra, free/OSS tools only
-
-### Status
-
-🚧 **In Development** — See [`docs/AgentBrain/`](docs/AgentBrain/) for design and implementation plan.
 
 **Author:** [Beyhan Meyrali](https://github.com/beyhanmeyrali)
