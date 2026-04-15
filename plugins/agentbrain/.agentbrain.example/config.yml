@@ -1,0 +1,23 @@
+# AgentBrain Team Configuration
+# Place this file at .agentbrain/config.yml in your repository root
+
+# Team identification
+team_id: "platform"  # Team name for shared memories
+org_id: ""  # Optional: Organization name for org-wide policies
+
+# Memory types to store in this repository
+memory_types:
+  - team      # Team conventions and patterns
+  - project   # Project-specific decisions
+
+# Review requirements
+review_required: false  # Set to true for PR-based review
+codeowners: []  # List of CODEOWNERS for team memory approval
+
+# Default scope for new memories in this repo
+default_scope: "project:REPO_NAME"  # Will be auto-replaced with actual repo name
+
+# Auto-promotion settings
+auto_promote:
+  enabled: false  # Automatically suggest promotion for frequently accessed personal memories
+  threshold: 5    # Number of accesses before suggesting promotion

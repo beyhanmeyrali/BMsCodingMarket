@@ -39,7 +39,7 @@ def get_config() -> dict:
 
 def get_allowed_scopes() -> List[str]:
     """
-    Compute allowed scopes based on environment and git context.
+    Compute allowed scopes based on environment, git context, and team config.
 
     Returns:
         List of scope filters (e.g., ["user:bob", "team:platform"]).
@@ -50,13 +50,25 @@ def get_allowed_scopes() -> List[str]:
     user_id = os.environ.get("USER", os.environ.get("USERNAME", "user"))
     scopes.append(f"user:{user_id}")
 
-    # Add team scope if configured
-    if team_id := os.environ.get("AGENTBRAIN_TEAM_ID"):
-        scopes.append(f"team:{team_id}")
+    # Check for team configuration from repo
+    try:
+        from team_config import load_team_config, get_team_scopes
+        team_scopes = get_team_scopes()
+        scopes.extend(team_scopes)
+    except Exception:
+        pass
 
-    # Add org scope if configured
+    # Add team scope if configured via environment
+    if team_id := os.environ.get("AGENTBRAIN_TEAM_ID"):
+        team_scope = f"team:{team_id}"
+        if team_scope not in scopes:
+            scopes.append(team_scope)
+
+    # Add org scope if configured via environment
     if org_id := os.environ.get("AGENTBRAIN_ORG_ID"):
-        scopes.append(f"org:{org_id}")
+        org_scope = f"org:{org_id}"
+        if org_scope not in scopes:
+            scopes.append(org_scope)
 
     # Add project scope if in a git repo
     try:
@@ -70,7 +82,9 @@ def get_allowed_scopes() -> List[str]:
         if result.returncode == 0:
             repo_path = Path(result.stdout.strip())
             project_name = repo_path.name
-            scopes.append(f"project:{project_name}")
+            project_scope = f"project:{project_name}"
+            if project_scope not in scopes:
+                scopes.append(project_scope)
     except Exception:
         pass
 
