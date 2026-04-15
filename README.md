@@ -292,10 +292,19 @@ BMsCodingMarket/
 
 ## Documentation
 
+### AgentBrain
+
 | Document | Description |
 |----------|-------------|
-| [AgentBrain Plan](docs/AgentBrain/PLAN.md) | Complete implementation plan |
+| [AgentBrain README](docs/AgentBrain/README.md) | Complete documentation (architecture, API, usage) |
+| [AgentBrain Installation](docs/AgentBrain/INSTALLATION.md) | Setup guide with troubleshooting |
+| [AgentBrain Plan](docs/AgentBrain/PLAN.md) | Implementation phases |
 | [AgentBrain Scenarios](docs/AgentBrain/SCENARIO_ANALYSIS.md) | Real-world scenario testing |
+
+### Other
+
+| Document | Description |
+|----------|-------------|
 | [Honcho Setup Guide](docs/HONCHO_SETUP_GUIDE.md) | Local Honcho setup on Windows |
 | [Lessons Learned](docs/LESSONS_LEARNED.md) | Development insights |
 
