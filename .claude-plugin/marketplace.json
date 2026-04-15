@@ -8,6 +8,13 @@
   },
   "plugins": [
     {
+      "name": "agentbrain",
+      "description": "Enterprise-grade persistent memory system with semantic retrieval, multi-tenant scoping, and auto-curation. Uses Qdrant vector DB and Ollama for 100% local operation - no API keys, no cloud. Includes governance features to prevent context rot.",
+      "version": "0.1.0",
+      "source": "./plugins/agentbrain",
+      "tags": ["memory", "qdrant", "ollama", "local-llm", "semantic-search", "multi-tenant", "enterprise"]
+    },
+    {
       "name": "honcho-bridge",
       "description": "Official Honcho memory system with Ollama integration for Claude Code. Installs and configures Honcho locally with Docker Postgres + Ollama (no API keys). Includes wiki export/import skills for knowledge management.",
       "version": "1.0.1",
