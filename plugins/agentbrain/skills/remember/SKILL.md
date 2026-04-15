@@ -7,7 +7,20 @@ description: Explicitly store a fact, preference, or decision to memory for futu
 
 Store important information to your AgentBrain memory for automatic retrieval in future sessions.
 
-## Usage
+## Natural Language Triggers (Recommended)
+
+You don't need to use the `/remember` command! Just use natural language:
+
+```
+"Add to AgentBrain: we use PostgreSQL for all new projects"
+"Remember that API routes should use kebab-case"
+"Note that I prefer functional components"
+"Don't forget we use TypeScript strict mode"
+```
+
+These phrases trigger immediate storage via the UserPromptSubmit hook.
+
+## Manual Usage
 
 ```
 /remember "We use PostgreSQL for all new projects"

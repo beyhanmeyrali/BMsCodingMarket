@@ -5,7 +5,19 @@ description: Explicitly store a fact, preference, or decision to memory
 
 Store important information to your AgentBrain memory for automatic retrieval in future sessions.
 
-## Usage
+## Natural Language Triggers (Recommended)
+
+You don't need to use the `/remember` command! Natural language phrases work automatically:
+
+- "Add to AgentBrain: ..."
+- "Remember that ..."
+- "Don't forget ..."
+- "Keep in mind ..."
+- "Note that ..."
+
+These trigger immediate storage via the UserPromptSubmit hook.
+
+## Manual Usage
 
 ```
 /remember "information to remember"

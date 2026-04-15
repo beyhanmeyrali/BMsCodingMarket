@@ -283,6 +283,23 @@ codeowners:
 
 ## Usage
 
+### Natural Language Triggers (Recommended)
+
+No commands needed! Just use natural language:
+
+```bash
+# Explicit storage - works immediately
+"Add to AgentBrain: we use PostgreSQL for all new projects"
+"Remember that we use Redis for caching"
+"Note that API routes use kebab-case"
+"Don't forget we never store secrets in code"
+
+# Automatic capture at session end
+"We decided to use TypeScript for all new projects"
+"The team uses GitHub Actions for CI/CD"
+"I prefer tabs over spaces in my code"
+```
+
 ### Manual Commands
 
 ```bash
@@ -299,7 +316,7 @@ codeowners:
 /promote postgresql_decision --to team:platform
 ```
 
-### Automatic (Recommended)
+### Automatic (Invisible)
 
 No commands needed! AgentBrain:
 

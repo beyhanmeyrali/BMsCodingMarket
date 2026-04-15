@@ -29,6 +29,10 @@ Knowledge accumulates automatically — no silos, no manual /remember needed.
 #### How It Works (Invisible)
 
 ```
+You: "Add to AgentBrain: we use GitHub Actions for deployment"
+[UserPromptSubmit hook → Stored immediately]
+
+Later...
 User: "How do I deploy to production?"
 
 [PreResponse hook runs → Queries Qdrant → Injects memories]
@@ -37,6 +41,7 @@ Claude: "Based on our team conventions, we use GitHub Actions..."
 ```
 
 Knowledge accumulates automatically:
+- Natural language triggers ("Add to AgentBrain", "Remember that")
 - SessionEnd captures insights
 - 3+ accesses → auto-promote to team
 - No manual /remember needed
@@ -51,7 +56,11 @@ ollama pull qwen3-embedding:0.6b
 # 2. Install
 /plugin install agentbrain@bms-marketplace
 
-# 3. Use (or let it auto-capture)
+# 3. Use natural language (no commands needed!)
+"Add to AgentBrain: we use PostgreSQL for production"
+"Remember that we use Redis for caching"
+
+# Or manual commands
 /remember "We use PostgreSQL for production"
 /recall "database"
 ```
@@ -60,6 +69,8 @@ ollama pull qwen3-embedding:0.6b
 
 | Command | Purpose |
 |---------|---------|
+| `"Add to AgentBrain: ..."` | Store immediately (natural language) |
+| `"Remember that ..."` | Store immediately (natural language) |
 | `/remember <info>` | Store information |
 | `/recall <query>` | Retrieve memories |
 | `/forget <topic>` | Delete a memory |

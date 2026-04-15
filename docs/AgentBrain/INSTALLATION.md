@@ -249,9 +249,60 @@ scope: team:platform
 - Integration tests for API changes
 ```
 
+## Natural Language Triggers
+
+AgentBrain captures information automatically through natural language — no commands needed.
+
+### Explicit Storage Triggers
+
+These phrases trigger immediate storage via the UserPromptSubmit hook:
+
+| Phrase | Example |
+|--------|---------|
+| "Add to AgentBrain" | "Add to AgentBrain: we use Redis for caching" |
+| "Add that to AgentBrain" | "That pattern works well. Add that to AgentBrain." |
+| "Remember that" | "Remember that we always use TypeScript strict mode" |
+| "Don't forget" | "Don't forget we use PostgreSQL not MongoDB" |
+| "Keep in mind" | "Keep in mind: API routes use kebab-case" |
+| "Note that" | "Note that we prefer tabs over spaces" |
+| "Save to AgentBrain" | "Save to AgentBrain: team uses GitHub Actions" |
+
+### Example Usage
+
+```
+You: "We decided to use Redis for session caching. Add that to AgentBrain."
+
+[AgentBrain] Stored to memory
+
+Later, when you or a teammate asks about caching:
+→ AgentBrain automatically injects the relevant context
+```
+
+### Auto-Capture (SessionEnd)
+
+Additionally, AgentBrain automatically captures insights at session end:
+
+- "We decided to use X"
+- "The team uses Y"
+- "I prefer Z"
+
+No manual action required.
+
 ## Verification
 
-### Test 1: Memory Storage
+### Test 1: Natural Language Storage
+
+```bash
+# Try the natural language trigger
+"Add to AgentBrain: AgentBrain is now installed"
+```
+
+Expected output:
+```
+[AgentBrain] Stored to memory
+```
+
+### Test 2: Manual Command Storage
 
 ```bash
 /remember "Testing AgentBrain installation"
