@@ -1,13 +1,25 @@
 ---
 name: remember
-description: Store information to AgentBrain memory for future retrieval. Use when user says "remember", "don't forget", "keep in mind", etc.
+description: Store information to AgentBrain memory. ALSO TRIGGERED AUTOMATICALLY by phrases like "add to AgentBrain", "remember that", "don't forget", etc.
 ---
 
 # Remember
 
 Store a fact, preference, or decision to your AgentBrain memory.
 
-## Usage
+## Automatic Triggers
+
+NO NEED TO CALL `/remember` DIRECTLY! The UserPromptSubmit hook automatically captures:
+
+- "Add to AgentBrain: ..."
+- "Add that to AgentBrain"
+- "Save to AgentBrain: ..."
+- "Remember that ..."
+- "Don't forget ..."
+- "Keep in mind ..."
+- "Note that ..."
+
+## Manual Usage
 
 ```
 /remember "I prefer TypeScript over JavaScript"
@@ -24,17 +36,12 @@ Store a fact, preference, or decision to your AgentBrain memory.
 ## Examples
 
 ```
+User: "Add to AgentBrain: we use Redis for caching"
+→ Automatic: Stored immediately
+
+User: "Remember that I prefer TypeScript over JavaScript"
+→ Automatic: Stored immediately
+
 /remember "We use PostgreSQL for all new projects"
 /remember "API routes should use kebab-case"
-/remember "User prefers functional components over class components"
-/remember "Run tests before committing code"
 ```
-
-## When to Use
-
-Use `/remember` when the user indicates information should be stored:
-- "Remember that..."
-- "Don't forget..."
-- "Keep in mind..."
-- "Note that..."
-- "For future reference..."

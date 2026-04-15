@@ -13,20 +13,30 @@ AgentBrain gives you persistent memory across sessions. You can remember user pr
 Use `/remember` when the user indicates information should be stored:
 
 **Trigger phrases:**
+- "Add to AgentBrain..."
+- "Add that to AgentBrain..."
+- "Save to AgentBrain..."
 - "Remember that..."
 - "Don't forget..."
 - "Keep in mind..."
 - "Note that..."
 - "For future reference..."
-- Just so you know...
+
+**IMPORTANT: "Add to AgentBrain" triggers immediate storage via UserPromptSubmit hook.**
 
 **Examples:**
 ```
+User: "Add to AgentBrain: we use Redis for session caching"
+→ Automatic: Stored immediately (no /remember needed)
+
+User: "Add those to AgentBrain"
+→ Automatic: Extracts context from conversation and stores
+
 User: "Remember that I always use TypeScript strict mode"
-→ You invoke: /remember "I always use TypeScript strict mode"
+→ Automatic: Stored immediately
 
 User: "Note that we use PostgreSQL not MongoDB"
-→ You invoke: /remember "We use PostgreSQL not MongoDB"
+→ Automatic: Stored immediately
 ```
 
 ### Recalling Information
