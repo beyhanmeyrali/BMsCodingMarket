@@ -13,7 +13,7 @@ plugin_root = Path(os.environ.get("CLAUDE_PLUGIN_ROOT", "."))
 sys.path.insert(0, str(plugin_root / "scripts"))
 
 from providers.qdrant import QdrantProvider
-from regenerate_index import regenerate_index, write_index
+from regenerate_index import generate_index, write_index
 
 
 def get_config() -> dict:
@@ -46,6 +46,9 @@ def resolve_memory_name(name: str) -> Path:
     """
     memory_dir = get_memory_dir()
 
+    # Store original search term
+    search_term = name.lower()
+
     # Add .md if not present
     if not name.endswith(".md"):
         name = f"{name}.md"
@@ -55,9 +58,11 @@ def resolve_memory_name(name: str) -> Path:
     if direct_path.exists():
         return direct_path
 
-    # Try partial match
+    # Try partial match (search term without .md in filename)
     for file in memory_dir.glob("*.md"):
-        if name.lower() in file.name.lower():
+        # Remove .md for comparison
+        file_stem = file.stem.lower()
+        if search_term in file_stem:
             return file
 
     return None
@@ -113,7 +118,7 @@ def skill_forget(name: str) -> str:
 
     # Regenerate index
     try:
-        index_content, count = regenerate_index()
+        index_content, count = generate_index()
         write_index(index_content)
     except Exception:
         pass  # Non-fatal

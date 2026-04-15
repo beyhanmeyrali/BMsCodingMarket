@@ -16,7 +16,7 @@ plugin_root = Path(os.environ.get("CLAUDE_PLUGIN_ROOT", "."))
 sys.path.insert(0, str(plugin_root / "scripts"))
 
 from upsert import upsert_memory, get_memory_dir
-from regenerate_index import regenerate_index, write_index
+from regenerate_index import generate_index, write_index
 
 
 def classify_memory(text: str) -> tuple[str, str]:
@@ -157,7 +157,7 @@ def skill_remember(text: str) -> str:
 
     # Regenerate index
     try:
-        index_content, count = regenerate_index()
+        index_content, count = generate_index()
         write_index(index_content)
     except Exception:
         pass  # Non-fatal

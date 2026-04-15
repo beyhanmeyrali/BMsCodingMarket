@@ -17,7 +17,7 @@ plugin_root = Path(os.environ.get("CLAUDE_PLUGIN_ROOT", "."))
 sys.path.insert(0, str(plugin_root / "scripts"))
 
 from upsert import upsert_memory, get_memory_dir
-from regenerate_index import regenerate_index
+from regenerate_index import generate_index, write_index
 
 
 def get_curator_output_file() -> Path:
@@ -271,7 +271,8 @@ def main():
 
         # Regenerate memory index
         try:
-            regenerate_index()
+            generate_index()
+            write_index(index_content)
         except Exception as e:
             print(f"[AgentBrain] Failed to regenerate index: {e}", file=sys.stderr)
 
