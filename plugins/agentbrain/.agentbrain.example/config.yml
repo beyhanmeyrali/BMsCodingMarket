@@ -21,3 +21,31 @@ default_scope: "project:REPO_NAME"  # Will be auto-replaced with actual repo nam
 auto_promote:
   enabled: false  # Automatically suggest promotion for frequently accessed personal memories
   threshold: 5    # Number of accesses before suggesting promotion
+
+# Trust metadata defaults for memories stored in this repo
+trust_defaults:
+  # Default approval status for new memories
+  approval_status: "draft"  # draft, approved, archived, superseded
+
+  # Default confidence score (0.0 to 1.0)
+  confidence: 0.5
+
+  # Source type for manually created memories
+  source_type: "manual"  # manual, pr, adr, incident, conversation, auto_captured
+
+# Domain tags for this repository
+# These tags are automatically applied to memories in this repo
+domain_tags:
+  - SAP
+  - ABAP_Cloud
+  - Clean_Core
+
+# Require specific tags for memories to be promoted to broader scopes
+promotion_requirements:
+  team:
+    min_confidence: 0.6
+    required_tags: ["SAP"]
+  org:
+    min_confidence: 0.8
+    required_approval: true
+    required_tags: ["SAP", "approved"]

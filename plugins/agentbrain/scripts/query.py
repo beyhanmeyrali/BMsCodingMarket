@@ -114,11 +114,44 @@ def load_memory_content(file_path: str) -> str:
     return ""
 
 
+# Retrieval mode configurations
+RETRIEVAL_MODES = {
+    "similar_incidents": {
+        "filter_source_types": ["incident"],
+        "require_approval": False,
+        "min_confidence": 0.3,
+    },
+    "conventions": {
+        "filter_source_types": ["manual", "auto_captured"],
+        "filter_types": ["feedback", "project"],
+        "require_approval": False,
+        "min_confidence": 0.5,
+    },
+    "approved_standards": {
+        "filter_source_types": ["adr", "manual"],
+        "require_approval": True,
+        "min_confidence": 0.8,
+    },
+    "example_solutions": {
+        "filter_source_types": ["pr", "manual", "incident"],
+        "require_approval": False,
+        "min_confidence": 0.4,
+    },
+    "architecture_decisions": {
+        "filter_source_types": ["adr"],
+        "require_approval": True,
+        "min_confidence": 0.7,
+    },
+}
+
+
 def query_memories(
     query: str,
     scopes: Optional[List[str]] = None,
     top_k: Optional[int] = None,
     min_score: Optional[float] = None,
+    retrieval_mode: Optional[str] = None,
+    domain_tags: Optional[List[str]] = None,
 ) -> List[SearchResult]:
     """
     Query memories with semantic search.
@@ -128,11 +161,21 @@ def query_memories(
         scopes: Allowed scopes (auto-detected if None)
         top_k: Maximum results (from config if None)
         min_score: Minimum similarity score (from config if None)
+        retrieval_mode: Predefined retrieval mode (similar_incidents, conventions, etc.)
+        domain_tags: Filter by domain tags (e.g., ["RAP", "CDS"])
 
     Returns:
         List of search results sorted by relevance.
     """
     config = get_config()
+
+    # Apply retrieval mode configuration
+    mode_config = {}
+    if retrieval_mode and retrieval_mode in RETRIEVAL_MODES:
+        mode_config = RETRIEVAL_MODES[retrieval_mode]
+        # Override min_score with mode-specific confidence if not explicitly set
+        if min_score is None:
+            min_score = mode_config.get("min_confidence", config["min_score"])
 
     if scopes is None:
         scopes = get_allowed_scopes()
@@ -176,9 +219,53 @@ def query_memories(
         results = qdrant.query(
             embedding=query_embedding,
             scopes=scopes,
-            top_k=top_k,
+            top_k=top_k * 2 if mode_config else top_k,  # Fetch more if filtering
             min_score=min_score,
         )
+
+        # Apply retrieval mode and domain tag filters
+        filtered_results = []
+        for result in results:
+            metadata = result.memory.metadata
+
+            # Apply retrieval mode filters
+            if mode_config:
+                # Filter by source type
+                if "filter_source_types" in mode_config:
+                    source_type = metadata.get("source_type", "manual")
+                    if source_type not in mode_config["filter_source_types"]:
+                        continue
+
+                # Filter by memory type
+                if "filter_types" in mode_config:
+                    if result.memory.type not in mode_config["filter_types"]:
+                        continue
+
+                # Require approval
+                if mode_config.get("require_approval", False):
+                    approval_status = metadata.get("approval_status", "draft")
+                    if approval_status != "approved":
+                        continue
+
+                # Minimum confidence
+                mode_min_confidence = mode_config.get("min_confidence", 0)
+                confidence = metadata.get("confidence", 0.5)
+                if confidence < mode_min_confidence:
+                    continue
+
+            # Apply domain tag filters
+            if domain_tags:
+                memory_tags = metadata.get("domain_tags", [])
+                if not any(tag in memory_tags for tag in domain_tags):
+                    continue
+
+            filtered_results.append(result)
+
+        # Trim to top_k if we filtered
+        if mode_config and len(filtered_results) > top_k:
+            filtered_results = filtered_results[:top_k]
+
+        results = filtered_results
 
         # Load full content for each result and track access
         for result in results:
@@ -235,10 +322,17 @@ def format_results(results: List[SearchResult]) -> str:
 
     for i, result in enumerate(results, 1):
         memory = result.memory
+        metadata = result.memory.metadata
 
         # Header with file and score
         score_pct = int(result.score * 100)
-        lines.append(f"## {i}. {memory.file_path} (relevance: {score_pct}%)")
+        confidence = metadata.get("confidence", 0.5)
+        confidence_pct = int(confidence * 100)
+
+        # Add trust indicator
+        trust_indicator = "✓" if metadata.get("approval_status") == "approved" else "~"
+
+        lines.append(f"## {i}. {memory.file_path} (relevance: {score_pct}% | trust: {trust_indicator} {confidence_pct}%)")
 
         # Metadata
         meta_lines = []
@@ -246,6 +340,17 @@ def format_results(results: List[SearchResult]) -> str:
             meta_lines.append(f"**Scope:** {memory.scope}")
         if memory.type:
             meta_lines.append(f"**Type:** {memory.type}")
+
+        # Trust metadata
+        source_type = metadata.get("source_type", "manual")
+        approval_status = metadata.get("approval_status", "draft")
+        meta_lines.append(f"**Source:** {source_type}")
+        meta_lines.append(f"**Status:** {approval_status}")
+
+        # Domain tags
+        domain_tags = metadata.get("domain_tags", [])
+        if domain_tags:
+            meta_lines.append(f"**Tags:** {', '.join(domain_tags)}")
 
         if meta_lines:
             lines.append(" | ".join(meta_lines))
@@ -272,10 +377,19 @@ def main():
     parser.add_argument("--scopes", nargs="+", help="Allowed scopes")
     parser.add_argument("--top-k", type=int, help="Maximum results")
     parser.add_argument("--min-score", type=float, help="Minimum similarity score")
+    parser.add_argument("--mode", choices=list(RETRIEVAL_MODES.keys()),
+                        help="Retrieval mode (similar_incidents, conventions, etc.)")
+    parser.add_argument("--domain-tags", nargs="+",
+                        help="Filter by domain tags (e.g., RAP CDS ABAP_Cloud)")
     parser.add_argument("--format", choices=["text", "json"], default="text",
                         help="Output format")
 
     args = parser.parse_args()
+
+    # Normalize domain tags (replace hyphens with underscores if needed)
+    domain_tags = args.domain_tags
+    if domain_tags:
+        domain_tags = [tag.replace("-", "_") for tag in domain_tags]
 
     # Query
     results = query_memories(
@@ -283,6 +397,8 @@ def main():
         scopes=args.scopes,
         top_k=args.top_k,
         min_score=args.min_score,
+        retrieval_mode=args.mode,
+        domain_tags=domain_tags,
     )
 
     # Output

@@ -73,15 +73,89 @@ project:acme/api  # API project decisions, anyone working in repo sees
 org:acme          # Company-wide policies, everyone sees
 ```
 
+## Trust Metadata
+
+Every memory includes governance metadata for enterprise use:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source_type` | string | Where memory came from: `manual`, `pr`, `adr`, `incident`, `conversation`, `auto_captured` |
+| `approval_status` | string | `draft`, `approved`, `archived`, `superseded` |
+| `confidence` | float | 0.0-1.0 score indicating reliability |
+| `last_validated` | timestamp | When memory was last reviewed/validated |
+| `owner` | string | Team or individual responsible |
+| `supersedes` | string | ID of memory this replaces |
+| `superseded_by` | string | ID of newer memory that replaces this |
+
+### Memory Frontmatter Example
+
+```yaml
+---
+name: API Authentication Decision
+description: How we handle auth in our APIs
+type: project
+scope: project:myapi
+# Trust Metadata
+source_type: adr
+approval_status: approved
+confidence: 0.9
+owner: platform-team
+domain_tags:
+  - security
+  - jwt
+  - oauth2
+---
+```
+
+## Domain Tagging
+
+Memories can be tagged with technical domains for precise filtering:
+
+**Common SAP Tags:**
+- `RAP` - RESTful Application Programming
+- `CDS` - Core Data Services
+- `ABAP_Cloud` - ABAP Cloud development
+- `Transport` - Transport requests
+- `ATC` - ABAP Test Cockpit
+- `Clean_Core` - Clean Core methodology
+- `BTP` - SAP Business Technology Platform
+
+**Usage in Memory Files:**
+```yaml
+domain_tags:
+  - RAP
+  - CDS
+  - OData
+```
+
+## Retrieval Modes
+
+Query memories by type using retrieval modes:
+
+| Mode | Description | Best For |
+|------|-------------|----------|
+| `similar_incidents` | Related incidents | Troubleshooting, root cause analysis |
+| `conventions` | Team conventions | Onboarding, consistency |
+| `approved_standards` | Approved standards | Critical decisions, compliance |
+| `example_solutions` | Working solutions | Learning, reference implementations |
+| `architecture_decisions` | ADRs | Understanding tradeoffs |
+
+**Usage:**
+```
+/recall "RAP handler error" --mode similar_incidents --domain-tags RAP
+/recall "naming conventions" --mode conventions
+/recall "auth patterns" --mode approved_standards
+```
+
 ## Scripts
 
-| Script | Purpose |
-|--------|---------|
-| `seed_memories.py` | Import existing memories into vector DB |
-| `query.py` | Semantic search with scope filtering |
-| `embed.py` | Generate embeddings via Ollama |
-| `upsert.py` | Write/update memories in vector DB |
-| `regenerate_index.py` | Generate MEMORY.md from memory files |
+| Script | Purpose | Options |
+|--------|---------|--------|
+| `seed_memories.py` | Import existing memories into vector DB | `--scope`, `--type` |
+| `query.py` | Semantic search with scope filtering | `--mode`, `--domain-tags`, `--top-k` |
+| `embed.py` | Generate embeddings via Ollama | `--model` |
+| `upsert.py` | Write/update memories in vector DB | `--domain-tags`, `--source-type`, `--approval-status`, `--confidence`, `--owner` |
+| `regenerate_index.py` | Generate MEMORY.md from memory files | `--output` |
 
 ## Hooks
 

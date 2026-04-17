@@ -17,7 +17,7 @@ sys.path.insert(0, str(plugin_root / "scripts"))
 
 from providers.ollama import OllamaEmbedder, OllamaEmbedError
 from providers.qdrant import QdrantProvider
-from providers.base import Memory
+from providers.base import Memory, TrustMetadata
 
 
 def get_config() -> dict:
@@ -103,6 +103,8 @@ def upsert_memory(
     scope: str = None,
     memory_type: str = None,
     metadata: dict = None,
+    domain_tags: list = None,
+    trust_metadata: dict = None,
 ) -> str:
     """
     Upsert a memory to the vector database.
@@ -112,6 +114,8 @@ def upsert_memory(
         scope: Memory scope (auto-detected from file if None)
         memory_type: Memory type (auto-detected from file if None)
         metadata: Additional metadata
+        domain_tags: Domain/technical tags (e.g., ["RAP", "CDS"])
+        trust_metadata: Trust metadata dict (source_type, approval_status, etc.)
 
     Returns:
         ID of upserted memory.
@@ -126,7 +130,7 @@ def upsert_memory(
     memory_type = memory_type or frontmatter.get("type", "other")
     scope = scope or frontmatter.get("scope", f"{config['default_scope']}:default")
 
-    # Build metadata
+    # Build base metadata
     memory_metadata = {
         "source": frontmatter.get("source", "file"),
         "author": frontmatter.get("author", ""),
@@ -138,6 +142,25 @@ def upsert_memory(
     if metadata:
         memory_metadata.update(metadata)
 
+    # Extract trust metadata from frontmatter or params
+    trust_kwargs = {}
+    if trust_metadata:
+        trust_kwargs.update(trust_metadata)
+
+    # Check frontmatter for trust fields
+    for key in ["source_type", "approval_status", "confidence", "last_validated",
+                "owner", "supersedes", "superseded_by"]:
+        if key in frontmatter:
+            trust_kwargs[key] = frontmatter[key]
+
+    # Create trust metadata
+    trust = TrustMetadata(**trust_kwargs)
+
+    # Extract domain tags from frontmatter or params
+    tags = domain_tags or frontmatter.get("domain_tags", [])
+    if isinstance(tags, str):
+        tags = [t.strip() for t in tags.split(",")]
+
     # Create memory object
     memory = Memory(
         file_path=data["relative_path"],
@@ -145,6 +168,8 @@ def upsert_memory(
         type=memory_type,
         content=data["content"],
         metadata=memory_metadata,
+        domain_tags=tags,
+        trust=trust,
     )
 
     # Initialize providers
@@ -163,12 +188,25 @@ def upsert_memory(
     qdrant.initialize()
 
     # Generate embedding
-    # Use both content and frontmatter for better semantic matching
-    text_to_embed = f"{data['content']}\n\nType: {memory_type}\nScope: {scope}"
+    # Use content, type, scope, and domain tags for better semantic matching
+    tags_str = ", ".join(memory.domain_tags) if memory.domain_tags else ""
+    text_to_embed = f"{data['content']}\n\nType: {memory_type}\nScope: {scope}\nTags: {tags_str}"
     memory.embedding = embedder.embed(text_to_embed)
 
-    # Store content in metadata for retrieval
+    # Store content and trust/domain metadata in payload for retrieval
     memory.metadata["content"] = data["content"]
+    memory.metadata["domain_tags"] = memory.domain_tags
+    memory.metadata["source_type"] = memory.trust.source_type
+    memory.metadata["approval_status"] = memory.trust.approval_status
+    memory.metadata["confidence"] = memory.trust.confidence
+    if memory.trust.owner:
+        memory.metadata["owner"] = memory.trust.owner
+    if memory.trust.last_validated:
+        memory.metadata["last_validated"] = memory.trust.last_validated
+    if memory.trust.supersedes:
+        memory.metadata["supersedes"] = memory.trust.supersedes
+    if memory.trust.superseded_by:
+        memory.metadata["superseded_by"] = memory.trust.superseded_by
 
     # Upsert
     memory_id = qdrant.upsert(memory)
@@ -185,14 +223,39 @@ def main():
     parser.add_argument("--scope", help="Memory scope (e.g., user:bob, team:platform)")
     parser.add_argument("--type", choices=["user", "feedback", "project", "reference"],
                         help="Memory type")
+    parser.add_argument("--domain-tags", nargs="+",
+                        help="Domain tags (e.g., RAP CDS ABAP_Cloud)")
+    parser.add_argument("--source-type",
+                        choices=["manual", "pr", "adr", "incident", "conversation", "auto_captured"],
+                        help="Source type for trust metadata")
+    parser.add_argument("--approval-status",
+                        choices=["draft", "approved", "archived", "superseded"],
+                        default="draft",
+                        help="Approval status")
+    parser.add_argument("--confidence", type=float, default=0.5,
+                        help="Confidence score (0.0 to 1.0)")
+    parser.add_argument("--owner", help="Owner of this memory")
 
     args = parser.parse_args()
 
     try:
+        # Build trust metadata from args
+        trust_meta = {}
+        if args.source_type:
+            trust_meta["source_type"] = args.source_type
+        if args.approval_status:
+            trust_meta["approval_status"] = args.approval_status
+        if args.confidence:
+            trust_meta["confidence"] = args.confidence
+        if args.owner:
+            trust_meta["owner"] = args.owner
+
         memory_id = upsert_memory(
             file_path=args.file,
             scope=args.scope,
             memory_type=args.type,
+            domain_tags=args.domain_tags,
+            trust_metadata=trust_meta if trust_meta else None,
         )
 
         print(f"Upserted memory: {memory_id}")

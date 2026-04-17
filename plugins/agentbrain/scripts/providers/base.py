@@ -9,6 +9,34 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass, field
 from datetime import datetime
+import time
+
+
+@dataclass
+class TrustMetadata:
+    """
+    Trust and governance metadata for memories.
+
+    Enables enterprise-grade memory management with approval tracking,
+    validation, and provenance chains.
+    """
+    source_type: str = "manual"  # manual, pr, adr, incident, conversation, auto_captured
+    approval_status: str = "draft"  # draft, approved, archived, superseded
+    confidence: float = 0.5  # 0.0 to 1.0
+    last_validated: Optional[int] = None  # Unix timestamp
+    owner: str = ""  # User or team responsible
+    supersedes: Optional[str] = None  # ID of memory this replaces
+    superseded_by: Optional[str] = None  # ID of memory that replaces this
+
+    def is_trusted(self) -> bool:
+        """Check if memory is trusted (approved and validated)."""
+        return self.approval_status == "approved" and self.confidence >= 0.7
+
+    def is_stale(self, max_age_seconds: int = 7776000) -> bool:
+        """Check if memory is stale (90 days default)."""
+        if self.last_validated is None:
+            return True
+        return (int(time.time()) - self.last_validated) > max_age_seconds
 
 
 @dataclass
@@ -20,12 +48,18 @@ class Memory:
     content: str
     embedding: Optional[List[float]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    domain_tags: List[str] = field(default_factory=list)  # Technical/domain tags
+    trust: TrustMetadata = field(default_factory=TrustMetadata)
 
     def __post_init__(self):
         """Validate memory fields."""
         valid_types = {"user", "feedback", "project", "reference"}
         if self.type not in valid_types:
             raise ValueError(f"Invalid memory type: {self.type}. Must be one of {valid_types}")
+
+        # Convert trust dict to TrustMetadata if needed
+        if isinstance(self.trust, dict):
+            self.trust = TrustMetadata(**{k: v for k, v in self.trust.items() if v is not None})
 
 
 @dataclass
